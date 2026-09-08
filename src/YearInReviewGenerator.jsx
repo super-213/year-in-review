@@ -1,3 +1,6 @@
+import { DEFAULT_CHART } from './charts.js';
+import { DEFAULT_LABELS, TEMPLATES, TRANSLATIONS } from './locales.js';
+import { translate, translateDefaults } from './i18n.js';
 import { ChartPage, ChartEditor } from './ChartPage.jsx';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageData, movePage } from './pages.js';
@@ -67,31 +70,6 @@ const ICON_MAP = {
   social_linked: <Linkedin className="w-full h-full" />
 };
 
-const DEFAULT_LABELS = {
-  en: {
-    coffee: "Coffees", book: "Books Read", activity: "Workouts", zap: "Moments",
-    heart: "Kindness", work: "Projects", music: "Minutes Listened", globe: "Countries",
-    terminal: "Lines of Code", feather: "Words Written", phone: "Screen Time",
-    camera: "Photos Taken", star: "Achievements", disc: "Albums", duolingo: "Streak Days",
-    language: "Languages", strava_cycle: "km Cycled", strava_run: "km Run",
-    gym: "Gym Sessions", travel: "Trips", gaming: "Hours Played", coding: "Commits",
-    git: "PRs Merged", design: "Designs", finance: "Savings", spotify: "Top Genre",
-    youtube: "Hours Watched", food: "New Foods", sleep: "Avg Sleep", location: "Places",
-    social_x: "Tweets", social_insta: "Posts", social_linked: "Connections"
-  },
-  id: {
-    coffee: "Kopi Diminum", book: "Buku Tamat", activity: "Olahraga", zap: "Momen Seru",
-    heart: "Kebaikan", work: "Proyek", music: "Menit Dengar", globe: "Negara",
-    terminal: "Baris Kode", feather: "Kata Ditulis", phone: "Durasi Layar",
-    camera: "Foto Diambil", star: "Pencapaian", disc: "Album", duolingo: "Hari Streak",
-    language: "Bahasa", strava_cycle: "km Sepeda", strava_run: "km Lari",
-    gym: "Sesi Gym", travel: "Perjalanan", gaming: "Jam Main", coding: "Total Commit",
-    git: "PR Merged", design: "Desain", finance: "Tabungan", spotify: "Genre Top",
-    youtube: "Jam Nonton", food: "Makanan Baru", sleep: "Rata-rata Tidur",
-    location: "Tempat", social_x: "Tweets", social_insta: "Postingan", social_linked: "Koneksi"
-  }
-};
-
 const THEMES = [
   { id: 'retro', name: '8-Bit Retro', vibe: 'Nostalgic, Console', color: 'bg-emerald-600' },
   { id: 'swiss', name: 'Swiss Grid', vibe: 'Bold, Typographic', color: 'bg-red-600' },
@@ -107,114 +85,6 @@ const THEMES = [
   { id: 'blueprint', name: 'Blueprint', vibe: 'Technical, Blue', color: 'bg-blue-800' }
 ];
 
-const TEMPLATES = {
-  en: {
-    year: '2025', title: 'The Year of Growth', subtitle: 'Building Foundations',
-    summary: "A year defined not by the destination, but by the journey.",
-    stats: [
-      { id: 1, label: 'Books Read', value: '12', icon: 'book' },
-      { id: 2, label: 'Streak Days', value: '365', icon: 'duolingo' },
-      { id: 3, label: 'km Run', value: '150', icon: 'strava_run' },
-      { id: 4, label: 'Commits', value: '840', icon: 'git' }
-    ],
-    highlights: [
-      { id: 1, title: 'Career Milestone', desc: 'Shipped my first major project.', emoji: '🚀' },
-      { id: 2, title: 'Travel Goal', desc: 'Visited Japan.', emoji: '🌸' },
-      { id: 3, title: 'New Hobby', desc: 'Learned photography.', emoji: '📸' }
-    ],
-    photos: [
-      { id: 1, url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=500', caption: 'Big Wins' },
-      { id: 2, url: 'https://images.unsplash.com/photo-1516724562728-afc824a36e84?auto=format&fit=crop&q=80&w=500', caption: 'Vibes' }
-    ]
-  },
-  id: {
-    year: '2025', title: 'Tahun Bertumbuh', subtitle: 'Membangun Pondasi',
-    summary: "Tahun yang didefinisikan bukan oleh tujuan, tapi perjalanannya.",
-    stats: [
-      { id: 1, label: 'Buku Tamat', value: '12', icon: 'book' },
-      { id: 2, label: 'Hari Streak', value: '365', icon: 'duolingo' },
-      { id: 3, label: 'km Lari', value: '150', icon: 'strava_run' },
-      { id: 4, label: 'Total Commit', value: '840', icon: 'git' }
-    ],
-    highlights: [
-      { id: 1, title: 'Karir Baru', desc: 'Menyelesaikan proyek besar pertama.', emoji: '🚀' },
-      { id: 2, title: 'Liburan Impian', desc: 'Mengunjungi Jepang.', emoji: '🌸' },
-      { id: 3, title: 'Hobi Baru', desc: 'Belajar fotografi.', emoji: '📸' }
-    ],
-    photos: [
-      { id: 1, url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=500', caption: 'Big Wins' },
-      { id: 2, url: 'https://images.unsplash.com/photo-1516724562728-afc824a36e84?auto=format&fit=crop&q=80&w=500', caption: 'Vibes' }
-    ]
-  }
-};
-
-const TRANSLATIONS = {
-  en: {
-    title: "MY YEAR EDIT", subtitle: "Curate your moments, design your story.",
-    reset: "Start Over", chooseVibe: "6. Vibe Check", scroll: "Scroll",
-    coreInfo: "1. The Intro", year: "Year", themeTitle: "Theme Title", metaSubtitle: "Subtitle",
-    numbers: "2. The Receipts", highlights: "3. Core Memories", highlightTitle: "Title", desc: "Description",
-    gallery: "4. Photo Dump", change: "Swap", add: "Add", summary: "5. The Outro", autoGen: "Magic Write",
-    privacyTitle: "100% Private", privacyText: "Your data stays on your device.",
-    preview: "Preview Story", saveSlide: "Screenshot Mode", saving: "Saving...", exitScreenshot: "Close Preview",
-    screenshotHint: "Tap 'Screenshot Mode' to view full screen & capture",
-    helpTitle: "How to use", helpDesc: "Create your own aesthetic year-in-review.",
-    step1: "Fill in stats & memories", step2: "Upload photos", step3: "Choose theme", step4: "Open Screenshot Mode",
-    close: "Got it!", madeBy: "made with year-in-review-generator",
-    
-    // Onboarding
-    welcomeTitle: "Welcome to Year Edit!",
-    welcomeDesc: "Turn your yearly stats and memories into stunning, shareable aesthetic slides in seconds.",
-    start: "Start Creating",
-
-    // Theme specific
-    pressStart: "PRESS START", playerStats: "PLAYER_STATS", achievements: "ACHIEVEMENTS", memoryDump: "MEMORY_DUMP", endTrans: "END_OF_TRANSMISSION",
-    annualReport: "ANNUAL REPORT", keyPoints: "KEY POINTS", endReport: "END REPORT", fig: "FIG",
-    collection: "The Collection", moments: "MOMENTS", seeYou: "See you next year...",
-    systemBoot: ":: SYSTEM_BOOT ::", neuralStats: "NEURAL_STATS", coreMem: "CORE_MEMORY", visualLogs: "VISUAL_LOGS", endLine: "END_OF_LINE_",
-    keyFigures: "Key Figures", fin: "Fin.", wow: "WOW!", pow: "POW!", snap: "SNAP!",
-    aesthetics: "A E S T H E T I C S", memoriesExe: "memories.exe", visuals: "V I S U A L S",
-    volume: "JILID", indexRerum: "INDEKS", chronicles: "KRONIK", plates: "PELAT", finis: "— FINIS —",
-    
-    myStats: "MY STATS",
-    wins: "BIG WINS",
-    pics: "EVIDENCE",
-    recap: "RECAP"
-  },
-  id: {
-    title: "EDISI TAHUNKU", subtitle: "Kurasi momenmu, desain ceritamu.",
-    reset: "Ulang Awal", chooseVibe: "6. Cek Vibe", scroll: "Geser",
-    coreInfo: "1. Intro Dulu", year: "Tahun", themeTitle: "Judul Utama", metaSubtitle: "Subjudul",
-    numbers: "2. Spill Angka", highlights: "3. Highlight Seru", highlightTitle: "Judul", desc: "Deskripsi",
-    gallery: "4. Dump Foto", change: "Ganti", add: "Tambah", summary: "5. Pesan & Kesan", autoGen: "Tulis Ajaib",
-    privacyTitle: "100% Privat", privacyText: "Data kamu aman di perangkat ini.",
-    preview: "Pratinjau", saveSlide: "Mode Screenshot", saving: "Menyimpan...", exitScreenshot: "Tutup Preview",
-    screenshotHint: "Ketuk 'Mode Screenshot' untuk layar penuh & capture",
-    helpTitle: "Cara Pakai", helpDesc: "Bikin rekap tahunan estetikmu.",
-    step1: "Isi statistik & kenangan", step2: "Upload foto", step3: "Pilih tema", step4: "Buka Mode Screenshot",
-    close: "Siap, gas!", madeBy: "dibuat dengan year-in-review-generator",
-
-    // Onboarding
-    welcomeTitle: "Selamat Datang di Edisi Tahunku!",
-    welcomeDesc: "Ubah statistik dan kenangan tahunanmu menjadi slide estetik yang siap dibagikan dalam hitungan detik.",
-    start: "Mulai Membuat",
-    
-    // Theme specific
-    pressStart: "TEKAN MULAI", playerStats: "STATISTIK_PEMAIN", achievements: "PENCAPAIAN", memoryDump: "MEMORI_DUMP", endTrans: "TRANSMISI SELESAI",
-    annualReport: "LAPORAN TAHUNAN", keyPoints: "POIN UTAMA", endReport: "LAPORAN SELESAI", fig: "GBR",
-    collection: "Koleksi", moments: "MOMEN", seeYou: "Sampai jumpa...",
-    systemBoot: ":: SISTEM_MULAI ::", neuralStats: "STAT_NEURAL", coreMem: "MEMORI_INTI", visualLogs: "LOG_VISUAL", endLine: "AKHIR_BARIS_",
-    keyFigures: "Angka Kunci", fin: "Selesai.", wow: "WAH!", pow: "DUAR!", snap: "JEPRET!",
-    aesthetics: "E S T E T I K A", memoriesExe: "memori.exe", visuals: "V I S U A L",
-    volume: "JILID", indexRerum: "INDEKS", chronicles: "KRONIK", plates: "PELAT", finis: "— TAMAT —",
-    
-    myStats: "STATISTIK",
-    wins: "PENCAPAIAN",
-    pics: "DOKUMENTASI",
-    recap: "REKAP"
-  }
-};
-
 const getPhotoGridClasses = (count) => {
   if (count <= 2) return "grid-cols-1 grid-rows-2";
   if (count === 3) return "grid-cols-2 grid-rows-2";
@@ -224,6 +94,7 @@ const getPhotoGridClasses = (count) => {
 
 const generateSmartSummary = (data, lang) => {
   const stats = data.stats;
+  if (lang === 'zh') return `${data.year}，以 ${data.stats[0].value} ${data.stats[0].label} 记录成长，珍藏${data.highlights[0]?.title || '每个精彩瞬间'}。`;
   const highlight = data.highlights[0]?.title || (lang === 'en' ? 'moments' : 'momen');
   const statVal = stats[0]?.value || '100';
   const statLab = stats[0]?.label || 'things';
@@ -1183,10 +1054,14 @@ export default function YearInReviewGenerator() {
       return validateWork({ format: WORK_FORMAT, version: 1,
         data: JSON.parse(localStorage.getItem('yearInReviewData')) || TEMPLATES.id,
         theme: localStorage.getItem('yearInReviewTheme') || 'retro',
-        language: localStorage.getItem('yearInReviewLanguage') === 'en' ? 'en' : 'id' });
+        language: ['en', 'zh', 'id'].includes(localStorage.getItem('yearInReviewLanguage')) ? localStorage.getItem('yearInReviewLanguage') : 'id' });
     } catch { return { data: TEMPLATES.id, theme: 'retro', language: 'id' }; }
   });
-  const [documentData, setDocumentData] = useState(() => ({ data: initialWork.data, pages: initialWork.pages || defaultPages(initialWork.data) }));
+  const [documentData, setDocumentData] = useState(() => {
+    const data = { ...initialWork.data, chart: translateDefaults(initialWork.data.chart || DEFAULT_CHART, DEFAULT_CHART, TEMPLATES[initialWork.language].chart) };
+    const pages = (initialWork.pages || defaultPages(data)).map(page => page.type === 'charts' ? { ...page, content: { chart: translateDefaults(page.content.chart, DEFAULT_CHART, TEMPLATES[initialWork.language].chart) } } : page);
+    return { data, pages };
+  });
   const { data: baseData, pages } = documentData;
   const [currentTheme, setCurrentTheme] = useState(initialWork.theme);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -1239,14 +1114,16 @@ export default function YearInReviewGenerator() {
   // --- [NEW] Onboarding State ---
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const t = TRANSLATIONS[language]; 
+  const t = TRANSLATIONS[language];
+  const tr = (key, params) => translate(language, key, params); 
   const totalSlides = pages.length; 
   const scrollContainerRef = useRef(null);
 
 // --- [NEW] Dynamic Favicon & Meta Title ---
   useEffect(() => {
     // 1. Update Browser Tab Title
-    document.title = `${t.title} ${data.year} | Create Your Story`;
+    document.documentElement.lang = language;
+    document.title = `${t.title} ${data.year} | ${translate(language, '创作你的故事')}`;
 
     // 2. Set Dynamic Emoji Favicon (Instant, no file upload needed)
     const setFavicon = (emoji) => {
@@ -1325,10 +1202,11 @@ export default function YearInReviewGenerator() {
   };
 
   const toggleLanguage = () => {
-    const newLang = language === 'en' ? 'id' : 'en';
-    const currentDefault = TEMPLATES[language];
-    const isDefaultData = data.title === currentDefault.title;
-    if (isDefaultData) setData(TEMPLATES[newLang]);
+    const newLang = ['en', 'zh', 'id'][(['en', 'zh', 'id'].indexOf(language) + 1) % 3];
+    setDocumentData(previous => ({
+      data: translateDefaults(previous.data, TEMPLATES[language], TEMPLATES[newLang]),
+      pages: previous.pages.map(page => ({ ...page, content: translateDefaults(page.content, TEMPLATES[language], TEMPLATES[newLang]) })),
+    }));
     setLanguage(newLang);
   };
 
@@ -1351,13 +1229,14 @@ export default function YearInReviewGenerator() {
     try {
       if (file.size > 100 * 1024 * 1024) throw new Error('作品文件不能超过 100 MB。');
       const work = parseWorkHtml(await file.text());
-      setDocumentData({ data: work.data, pages: work.pages || defaultPages(work.data) });
+      const importedData = { ...work.data, chart: work.data.chart || TEMPLATES[work.language].chart };
+      setDocumentData({ data: importedData, pages: work.pages || defaultPages(importedData) });
       setCurrentTheme(work.theme);
       setLanguage(work.language);
       setCurrentSlide(0);
       setFileStatus('作品已导入，可以继续编辑。');
     } catch (error) {
-      setFileStatus(`导入失败：${error.message}`);
+      setFileStatus({ key: '导入失败：{error}', error: error.message });
     }
   };
 
@@ -1381,7 +1260,7 @@ export default function YearInReviewGenerator() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
       setFileStatus('已导出 index.html：可直接部署，也可重新导入编辑。');
     } catch (error) {
-      setFileStatus(`导出失败：${error.message}`);
+      setFileStatus({ key: '导出失败：{error}', error: error.message });
     } finally {
       setIsExporting(false);
     }
@@ -1406,7 +1285,7 @@ export default function YearInReviewGenerator() {
    
   const addStat = () => {
     if (data.stats.length < 6) {
-      setData(prev => ({ ...prev, stats: [...prev.stats, { id: Date.now(), label: 'New Stat', value: '0', icon: 'star' }] }));
+      setData(prev => ({ ...prev, stats: [...prev.stats, { id: Date.now(), label: tr('新数据'), value: '0', icon: 'star' }] }));
     }
   };
 
@@ -1420,7 +1299,7 @@ export default function YearInReviewGenerator() {
 
   const addHighlight = () => {
     if (data.highlights.length < 4) {
-      setData(prev => ({ ...prev, highlights: [...prev.highlights, { id: Date.now(), title: 'New Highlight', desc: 'Description here.', emoji: '✨' }] }));
+      setData(prev => ({ ...prev, highlights: [...prev.highlights, { id: Date.now(), title: tr('新高光时刻'), desc: tr('在此填写说明。'), emoji: '✨' }] }));
     }
   };
 
@@ -1462,7 +1341,7 @@ export default function YearInReviewGenerator() {
           'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=500'
       ];
       const randomPlaceholder = placeholders[Math.floor(Math.random() * placeholders.length)];
-      setData(prev => ({ ...prev, photos: [...prev.photos, { id: Date.now(), url: randomPlaceholder, caption: 'New Memory' }] }));
+      setData(prev => ({ ...prev, photos: [...prev.photos, { id: Date.now(), url: randomPlaceholder, caption: tr('新回忆') }] }));
     }
   };
 
@@ -1473,7 +1352,7 @@ export default function YearInReviewGenerator() {
   };
 
   const resetData = () => {
-    if (confirm("Are you sure?")) {
+    if (confirm(tr('确定重新开始吗？'))) {
       setDocumentData({ data: TEMPLATES[language], pages: defaultPages(TEMPLATES[language]) });
       setCurrentSlide(0);
       localStorage.removeItem('yearInReviewData');
@@ -1490,7 +1369,7 @@ export default function YearInReviewGenerator() {
   const prevSlide = () => setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides);
 
   const renderContent = (slide = currentSlide, contentData = data) => {
-    if (pages[slide].type === 'charts') return <ChartPage chart={contentData.chart} theme={currentTheme} year={contentData.year} watermark={t.madeBy} />;
+    if (pages[slide].type === 'charts') return <ChartPage language={language} chart={contentData.chart} theme={currentTheme} year={contentData.year} watermark={t.madeBy} />;
     const props = { slide: PAGE_TYPES.indexOf(pages[slide].type), data: contentData, t };
     switch(currentTheme) {
       case 'retro': return <RenderRetro {...props} />;
@@ -1651,8 +1530,8 @@ export default function YearInReviewGenerator() {
                 <button onClick={() => setShowHelp(true)} className="text-[10px] font-bold bg-slate-100 p-2 rounded hover:bg-slate-200 flex items-center justify-center">
                   <HelpCircle className="w-4 h-4" />
                 </button>
-                <button onClick={toggleLanguage} className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded hover:bg-slate-200 flex items-center gap-1">
-                  <Globe className="w-3 h-3" /> {language === 'en' ? 'EN' : 'ID'}
+                <button onClick={toggleLanguage} aria-label={tr('切换语言')} className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded hover:bg-slate-200 flex items-center gap-1">
+                  <Globe className="w-3 h-3" /> {{ en: 'EN', zh: '中文', id: 'ID' }[language]}
                 </button>
                 <button onClick={resetData} className="text-[10px] uppercase font-bold text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
                   <RotateCcw className="w-3 h-3" /> {t.reset}
@@ -1660,43 +1539,43 @@ export default function YearInReviewGenerator() {
             </div>
           </header>
 
-          <section className="mb-8 border-b border-slate-200 pb-6" aria-label="作品文件">
+          <section className="mb-8 border-b border-slate-200 pb-6" aria-label={tr('作品文件')}>
             <div className="flex flex-wrap gap-3">
               <button onClick={exportWork} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
-                <Save className="w-4 h-4" />{isExporting ? '正在导出…' : '导出可部署 HTML'}
+                <Save className="w-4 h-4" />{isExporting ? tr('正在导出…') : tr('导出可部署 HTML')}
               </button>
               <button onClick={() => importRef.current.click()} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
-                <Upload className="w-4 h-4" />导入作品
+                <Upload className="w-4 h-4" />{tr('导入作品')}
               </button>
-              <input ref={importRef} type="file" accept=".html,text/html" onChange={importWork} className="hidden" aria-label="选择 HTML 作品" />
+              <input ref={importRef} type="file" accept=".html,text/html" onChange={importWork} className="hidden" aria-label={tr('选择 HTML 作品')} />
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-slate-500">导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。</p>
-            <p className="mt-2 text-xs text-slate-500" role="status">{saveStatus}</p>
-            <p className="mt-2 text-sm text-indigo-700" role="status">{fileStatus}</p>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">{tr('导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。')}</p>
+            <p className="mt-2 text-xs text-slate-500" role="status">{tr(saveStatus)}</p>
+            <p className="mt-2 text-sm text-indigo-700" role="status">{typeof fileStatus === 'string' ? tr(fileStatus) : tr(fileStatus.key, { error: tr(fileStatus.error) })}</p>
           </section>
            
-          <section className="mb-8 border-b border-slate-200 pb-6" aria-label="页面管理">
+          <section className="mb-8 border-b border-slate-200 pb-6" aria-label={tr('页面管理')}>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-slate-800">页面管理</h3>
-              <span className="text-xs text-slate-500">共 {totalSlides} 页</span>
+              <h3 className="font-bold text-slate-800">{tr('页面管理')}</h3>
+              <span className="text-xs text-slate-500">{tr('共 {n} 页', { n: totalSlides })}</span>
             </div>
-            <p className="text-xs text-slate-500 mb-4">选择页面编辑，可重复添加同一种界面。每页内容独立，年份、标题和风格共用。</p>
+            <p className="text-xs text-slate-500 mb-4">{tr('选择页面编辑，可重复添加同一种界面。每页内容独立，年份、标题和风格共用。')}</p>
             <ol className="space-y-2 mb-4">
               {pages.map((page, index) => (
                 <li key={page.id} className={`flex items-center gap-1 rounded-lg border p-1 ${index === currentSlide ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'}`}>
                   <button onClick={() => { setCurrentSlide(index); setHighlightImageError(null); }} aria-current={index === currentSlide ? 'page' : undefined} className="flex-1 text-left px-3 py-2 text-sm font-medium rounded focus-visible:outline-indigo-600">
-                    {index + 1}. {PAGE_LABELS[page.type]}
+                    {index + 1}. {tr(PAGE_LABELS[page.type])}
                   </button>
-                  <button onClick={() => reorderPage(index, -1)} disabled={index === 0} aria-label={`上移第 ${index + 1} 页`} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↑</button>
-                  <button onClick={() => reorderPage(index, 1)} disabled={index === pages.length - 1} aria-label={`下移第 ${index + 1} 页`} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↓</button>
-                  <button onClick={() => removePage(index)} disabled={pages.length === 1} aria-label={`删除第 ${index + 1} 页`} title={pages.length === 1 ? '至少保留一页' : '删除页面'} className="p-2 rounded text-slate-400 hover:text-red-600 disabled:opacity-25"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => reorderPage(index, -1)} disabled={index === 0} aria-label={tr('上移第 {n} 页', { n: index + 1 })} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↑</button>
+                  <button onClick={() => reorderPage(index, 1)} disabled={index === pages.length - 1} aria-label={tr('下移第 {n} 页', { n: index + 1 })} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↓</button>
+                  <button onClick={() => removePage(index)} disabled={pages.length === 1} aria-label={tr('删除第 {n} 页', { n: index + 1 })} title={pages.length === 1 ? tr('至少保留一页') : tr('删除页面')} className="p-2 rounded text-slate-400 hover:text-red-600 disabled:opacity-25"><Trash2 className="w-4 h-4" /></button>
                 </li>
               ))}
             </ol>
             <div className="flex flex-wrap gap-2">
-              {PAGE_TYPES.map(type => <button key={type} onClick={() => addPage(type)} className="flex items-center gap-1 border border-dashed border-slate-300 rounded-lg px-3 py-2 text-xs font-medium hover:border-indigo-500 hover:text-indigo-600"><Plus className="w-3 h-3" />{PAGE_LABELS[type]}</button>)}
+              {PAGE_TYPES.map(type => <button key={type} onClick={() => addPage(type)} className="flex items-center gap-1 border border-dashed border-slate-300 rounded-lg px-3 py-2 text-xs font-medium hover:border-indigo-500 hover:text-indigo-600"><Plus className="w-3 h-3" />{tr(PAGE_LABELS[type])}</button>)}
             </div>
-            <p className="mt-4 text-sm font-bold text-indigo-700">正在编辑：第 {currentSlide + 1} 页 · {PAGE_LABELS[activePage.type]}</p>
+            <p className="mt-4 text-sm font-bold text-indigo-700">{tr('正在编辑：第 {n} 页', { n: currentSlide + 1 })} · {tr(PAGE_LABELS[activePage.type])}</p>
           </section>
 
           <section className="mb-10 space-y-4">
@@ -1717,7 +1596,7 @@ export default function YearInReviewGenerator() {
             </div>
           </section>
 
-          {activePage.type === 'charts' && <ChartEditor chart={data.chart} onChange={chart => setData(previous => ({ ...previous, chart }))} />}
+          {activePage.type === 'charts' && <ChartEditor language={language} chart={data.chart} onChange={chart => setData(previous => ({ ...previous, chart }))} />}
 
           {activePage.type === 'stats' && <>
           {/* STATS SECTION */}
@@ -1735,8 +1614,8 @@ export default function YearInReviewGenerator() {
                       {Object.keys(ICON_MAP).map(k => <option key={k} value={k}>{k}</option>)}
                     </select>
                   </div>
-                  <input type="text" placeholder="Value" value={stat.value} onChange={(e) => handleStatChange(stat.id, 'value', e.target.value)} className="w-full mb-1 text-xl font-bold border-none p-0 focus:ring-0 placeholder:text-slate-300"/>
-                  <input type="text" placeholder="Label" value={stat.label} onChange={(e) => handleStatChange(stat.id, 'label', e.target.value)} className="w-full text-xs font-medium text-slate-500 border-none p-0 focus:ring-0 placeholder:text-slate-300 pr-6"/>
+                  <input type="text" placeholder={tr('数值')} value={stat.value} onChange={(e) => handleStatChange(stat.id, 'value', e.target.value)} className="w-full mb-1 text-xl font-bold border-none p-0 focus:ring-0 placeholder:text-slate-300"/>
+                  <input type="text" placeholder={tr('名称')} value={stat.label} onChange={(e) => handleStatChange(stat.id, 'label', e.target.value)} className="w-full text-xs font-medium text-slate-500 border-none p-0 focus:ring-0 placeholder:text-slate-300 pr-6"/>
                 </div>
               ))}
             </div>
@@ -1763,7 +1642,7 @@ export default function YearInReviewGenerator() {
                    {/* Emoji & Title Row */}
                    <div className="flex gap-2 mb-2 items-start">
                      <div className="w-12 flex-shrink-0">
-                       {item.image ? <img src={item.image} alt={`${item.title} 图片`} className="w-12 h-12 rounded-lg object-contain bg-slate-50" /> : <input
+                       {item.image ? <img src={item.image} alt={`${item.title} ${tr('图片')}`} className="w-12 h-12 rounded-lg object-contain bg-slate-50" /> : <input
                          type="text" 
                          value={item.emoji || ''} 
                          onChange={(e) => handleHighlightChange(item.id, 'emoji', e.target.value)} 
@@ -1791,13 +1670,13 @@ export default function YearInReviewGenerator() {
 
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <label className="relative cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800 rounded focus-within:ring-2 focus-within:ring-indigo-500 px-1 py-1">
-                      <Upload className="w-3 h-3 inline-block mr-1" />{item.image ? '替换图片' : '上传图片'}
-                      <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" className="sr-only" aria-label={`${item.title} 上传图片`} onChange={event => handleHighlightImageUpload(item.id, event)} />
+                      <Upload className="w-3 h-3 inline-block mr-1" />{item.image ? tr('替换图片') : tr('上传图片')}
+                      <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" className="sr-only" aria-label={`${item.title} ${tr('上传图片')}`} onChange={event => handleHighlightImageUpload(item.id, event)} />
                     </label>
-                    {item.image && <button type="button" onClick={() => handleHighlightChange(item.id, 'image', '')} className="text-xs text-slate-500 hover:text-red-600">移除图片，恢复 Emoji</button>}
-                    <span className="text-[10px] text-slate-400">支持 Emoji 或图片</span>
+                    {item.image && <button type="button" onClick={() => handleHighlightChange(item.id, 'image', '')} className="text-xs text-slate-500 hover:text-red-600">{tr('移除图片，恢复 Emoji')}</button>}
+                    <span className="text-[10px] text-slate-400">{tr('支持 Emoji 或图片')}</span>
                   </div>
-                  {highlightImageError?.pageId === activePage.id && highlightImageError?.id === item.id && <p role="alert" className="text-xs text-red-600 mb-2">{highlightImageError.message}</p>}
+                  {highlightImageError?.pageId === activePage.id && highlightImageError?.id === item.id && <p role="alert" className="text-xs text-red-600 mb-2">{tr(highlightImageError.message)}</p>}
                   {/* Description Area */}
                   <div className="relative">
                     <textarea 
@@ -1863,7 +1742,7 @@ export default function YearInReviewGenerator() {
                 <Wand2 className="w-3 h-3" /> {t.autoGen}
               </button>
             </div>
-            <textarea value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-32 text-sm leading-relaxed shadow-sm resize-none" placeholder="Sum up the year..."/>
+            <textarea value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-32 text-sm leading-relaxed shadow-sm resize-none" placeholder={tr('总结这一年…')}/>
           </section>
 
           </>}
@@ -1893,8 +1772,8 @@ export default function YearInReviewGenerator() {
                     }`}
                   >
                     <div className={`w-full h-16 rounded-lg mb-2 ${t.color} shadow-sm group-hover:scale-105 transition-transform`}></div>
-                    <div className="font-bold text-slate-800 text-xs leading-tight">{t.name}</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400 mt-1 truncate">{t.vibe}</div>
+                    <div className="font-bold text-slate-800 text-xs leading-tight">{tr(t.name)}</div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400 mt-1 truncate">{tr(t.vibe)}</div>
                   </button>
                 ))}
               </div>
@@ -1906,7 +1785,7 @@ export default function YearInReviewGenerator() {
           {/* Site Footer */}
           <div className="mt-8 border-t border-slate-200 pt-6">
             <p className="text-center text-slate-400 text-xs">
-              &copy; {new Date().getFullYear()} <a href="https://www.linkedin.com/in/fadlyzaki/" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-indigo-600 transition-colors">@fadlyzaki</a>. All rights reserved.
+              &copy; {new Date().getFullYear()} <a href="https://www.linkedin.com/in/fadlyzaki/" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-indigo-600 transition-colors">@fadlyzaki</a>. {tr('All rights reserved.')}
             </p>
           </div>
         </div>

@@ -41,7 +41,7 @@ test('failed remote photos prevent incomplete exports', async () => {
   globalThis.fetch = async () => { throw new Error('Network unavailable'); };
   try {
     const work = fixture(); work.data.photos[0].url = 'https://example.com/photo.png';
-    await assert.rejects(embedPhotos(work), /无法打包照片/);
+    await assert.rejects(embedPhotos(work), /Could not package photo/);
   } finally { globalThis.fetch = originalFetch; }
 });
 

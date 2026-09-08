@@ -1,3 +1,4 @@
+import { translate } from './i18n.js';
 import { validateChart } from './charts.js';
 import { PAGE_TYPES, PAGE_FIELDS, pageData } from './pages.js';
 import { viewerStyles, viewerScript } from './workViewer.js';
@@ -12,7 +13,7 @@ const isImageUrl = value => typeof value === 'string' && /^(data:image\/(png|jpe
 // Only extract known data fields. Imported HTML is never inserted or executed.
 export function validateWork(work) {
   const fail = () => { throw new Error('作品文件格式不正确，或版本暂不支持。'); };
-  if (!work || work.format !== WORK_FORMAT || ![1, 2].includes(work.version) || !THEME_IDS.includes(work.theme) || !['en', 'id'].includes(work.language)) fail();
+  if (!work || work.format !== WORK_FORMAT || ![1, 2].includes(work.version) || !THEME_IDS.includes(work.theme) || !['en', 'zh', 'id'].includes(work.language)) fail();
   const text = (value) => {
     if (typeof value !== 'string' || value.length > 20000) fail();
     return value;
@@ -84,7 +85,7 @@ export async function embedPhotos(work) {
       });
       return { ...photo, url };
     } catch {
-      throw new Error(`无法打包照片「${photo.caption}」。请将该照片上传为本地图片后重新导出。`);
+      throw new Error(translate(work.language, '无法打包照片「{caption}」。请将该照片上传为本地图片后重新导出。', { caption: photo.caption }));
     }
   };
   if (work.pages) {
@@ -124,7 +125,7 @@ ${viewerStyles}
 </style></head><body>
 <main class="work-viewer" aria-label="${title}" style="--stat-columns:${(work.data.stats.length <= 4 ? 2 : 3)};--photo-columns:${Math.min(work.data.photos.length, 3)};--photo-rows:${Math.ceil(work.data.photos.length / 3)}"><div class="work-frame">${renderedSlides}</div>
 <div class="work-progress" aria-hidden="true">${slides.map((_, i) => `<span data-active="${i === 0}"></span>`).join('')}</div>
-<nav class="work-nav" aria-label="Slides"><button id="previous" aria-label="Previous slide">←</button><span id="page" aria-live="polite">1 / ${slides.length}</span><button id="next" aria-label="Next slide">→</button></nav></main>
+<nav class="work-nav" aria-label="${translate(work.language, '页面')}"><button id="previous" aria-label="${translate(work.language, '上一页')}">←</button><span id="page" aria-live="polite">1 / ${slides.length}</span><button id="next" aria-label="${translate(work.language, '下一页')}">→</button></nav></main>
 <script type="application/json" id="year-in-review-work">${serializeWork(work)}</script>
 <script>${viewerScript}</script>
 </body></html>`;
