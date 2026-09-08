@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+.dev.vars
+.dev.vars.*
+.wrangler

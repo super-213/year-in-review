@@ -1108,6 +1108,10 @@ export default function YearInReviewGenerator() {
   const [fileStatus, setFileStatus] = useState('');
   const [highlightImageError, setHighlightImageError] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [showDeploy, setShowDeploy] = useState(false);
+  const [deployPassword, setDeployPassword] = useState('');
+  const [deployment, setDeployment] = useState(null);
   const importRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
 
@@ -1240,14 +1244,53 @@ export default function YearInReviewGenerator() {
     }
   };
 
+  const buildWorkHtml = async () => {
+    const work = await embedPhotos(validateWork({ format: WORK_FORMAT, version: 2, data: baseData, pages, theme: currentTheme, language }));
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const slides = work.pages.map((page, index) => renderToStaticMarkup(renderContent(index, pageData(work.data, page))));
+    return createWorkHtml(work, slides, exportStyles);
+  };
+
+  const deployWork = async (event) => {
+    event.preventDefault();
+    setIsDeploying(true);
+    setFileStatus('正在上传临时作品…');
+    try {
+      const html = await buildWorkHtml();
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      if (blob.size > 20 * 1024 * 1024) throw new Error('临时部署最大支持 20 MB，请缩小照片后重试。');
+      const response = await fetch('/api/demos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/html;charset=utf-8', Authorization: `Bearer ${deployPassword}` },
+        body: blob,
+        signal: AbortSignal.timeout(120000),
+      });
+      const result = await response.json().catch(() => { throw new Error('部署接口不可用，请确认已部署 Cloudflare 后端。'); });
+      if (!response.ok) throw new Error(result.error || '作品上传失败，请稍后重试。');
+      if (!/^\/demo\/[a-f0-9]{32}$/.test(result.path) || !Number.isFinite(Date.parse(result.expiresAt))) throw new Error('部署接口不可用，请确认已部署 Cloudflare 后端。');
+      setDeployment({ url: new URL(result.path, window.location.origin).href, expiresAt: result.expiresAt });
+      setDeployPassword('');
+      setShowDeploy(false);
+      setFileStatus('临时部署成功，链接可公开访问。');
+    } catch (error) {
+      setFileStatus({ key: '临时部署失败：{error}', error: error.message });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
+  const copyDeployment = async () => {
+    try {
+      await navigator.clipboard.writeText(deployment.url);
+      setFileStatus('链接已复制。');
+    } catch { setFileStatus('无法自动复制，请选中链接手动复制。'); }
+  };
+
   const exportWork = async () => {
     setIsExporting(true);
     setFileStatus('正在打包作品和照片…');
     try {
-      const work = await embedPhotos(validateWork({ format: WORK_FORMAT, version: 2, data: baseData, pages, theme: currentTheme, language }));
-      const { renderToStaticMarkup } = await import('react-dom/server');
-      const slides = work.pages.map((page, index) => renderToStaticMarkup(renderContent(index, pageData(work.data, page))));
-      const html = createWorkHtml(work, slides, exportStyles);
+      const html = await buildWorkHtml();
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       if (blob.size > 100 * 1024 * 1024) throw new Error('作品超过 100 MB，请缩小照片后重试。');
       const url = URL.createObjectURL(blob);
@@ -1541,14 +1584,36 @@ export default function YearInReviewGenerator() {
 
           <section className="mb-8 border-b border-slate-200 pb-6" aria-label={tr('作品文件')}>
             <div className="flex flex-wrap gap-3">
-              <button onClick={exportWork} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
+              <button onClick={exportWork} disabled={isExporting || isDeploying} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
                 <Save className="w-4 h-4" />{isExporting ? tr('正在导出…') : tr('导出可部署 HTML')}
               </button>
-              <button onClick={() => importRef.current.click()} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
+              <button onClick={() => importRef.current.click()} disabled={isExporting || isDeploying} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
                 <Upload className="w-4 h-4" />{tr('导入作品')}
+              </button>
+              <button type="button" onClick={() => setShowDeploy(value => !value)} disabled={isExporting || isDeploying} aria-expanded={showDeploy} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-indigo-700 text-sm font-bold hover:bg-indigo-50 disabled:opacity-50">
+                <Globe className="w-4 h-4" />{isDeploying ? tr('正在部署…') : tr('临时部署')}
               </button>
               <input ref={importRef} type="file" accept=".html,text/html" onChange={importWork} className="hidden" aria-label={tr('选择 HTML 作品')} />
             </div>
+            {showDeploy && (
+              <form onSubmit={deployWork} className="mt-4 space-y-3 rounded-lg bg-indigo-50 p-4">
+                <p className="text-sm text-slate-700">{tr('将当前作品及照片上传到网站，任何持有链接的人都可查看。链接 7 天后失效，最大支持 20 MB。')}</p>
+                <label className="block text-sm font-bold text-slate-700">
+                  {tr('部署口令')}
+                  <input type="password" value={deployPassword} onChange={event => setDeployPassword(event.target.value)} required disabled={isDeploying} autoComplete="off" className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-normal" />
+                </label>
+                <button type="submit" disabled={isDeploying || !deployPassword.trim()} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{tr(isDeploying ? '正在部署…' : '上传并生成链接')}</button>
+              </form>
+            )}
+            {deployment && (
+              <div className="mt-4 space-y-2 rounded-lg border border-indigo-200 p-4 text-sm">
+                <p className="font-bold text-indigo-700">{tr('临时作品链接')}</p>
+                <a href={deployment.url} target="_blank" rel="noopener noreferrer" className="block break-all text-indigo-600 underline">{deployment.url}</a>
+                <p className="text-xs text-slate-500">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
+                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')}</p>
+                <button type="button" onClick={copyDeployment} className="font-bold text-indigo-700 underline">{tr('复制链接')}</button>
+              </div>
+            )}
             <p className="mt-3 text-xs leading-relaxed text-slate-500">{tr('导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。')}</p>
             <p className="mt-2 text-xs text-slate-500" role="status">{tr(saveStatus)}</p>
             <p className="mt-2 text-sm text-indigo-700" role="status">{typeof fileStatus === 'string' ? tr(fileStatus) : tr(fileStatus.key, { error: tr(fileStatus.error) })}</p>

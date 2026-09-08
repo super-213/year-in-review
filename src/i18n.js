@@ -1,4 +1,109 @@
 export const MESSAGES = {
+  "正在上传临时作品…": {
+    "zh": "正在上传临时作品…",
+    "en": "Uploading temporary page…",
+    "id": "Mengunggah halaman sementara…"
+  },
+  "临时部署最大支持 20 MB，请缩小照片后重试。": {
+    "zh": "临时部署最大支持 20 MB，请缩小照片后重试。",
+    "en": "Temporary pages support up to 20 MB. Please reduce photo sizes and try again.",
+    "id": "Halaman sementara maksimal 20 MB. Perkecil foto lalu coba lagi."
+  },
+  "部署接口不可用，请确认已部署 Cloudflare 后端。": {
+    "zh": "部署接口不可用，请确认已部署 Cloudflare 后端。",
+    "en": "Deployment API unavailable. Check that the Cloudflare backend is deployed.",
+    "id": "API penerbitan tidak tersedia. Pastikan backend Cloudflare sudah diterbitkan."
+  },
+  "作品上传失败，请稍后重试。": {
+    "zh": "作品上传失败，请稍后重试。",
+    "en": "Upload failed. Please try again later.",
+    "id": "Unggahan gagal. Silakan coba lagi nanti."
+  },
+  "临时部署成功，链接可公开访问。": {
+    "zh": "临时部署成功，链接可公开访问。",
+    "en": "Temporary page published. Anyone with the link can view it.",
+    "id": "Halaman sementara diterbitkan. Siapa pun dengan tautan dapat melihatnya."
+  },
+  "临时部署失败：{error}": {
+    "zh": "临时部署失败：{error}",
+    "en": "Deployment failed: {error}",
+    "id": "Penerbitan gagal: {error}"
+  },
+  "链接已复制。": {
+    "zh": "链接已复制。",
+    "en": "Link copied.",
+    "id": "Tautan disalin."
+  },
+  "无法自动复制，请选中链接手动复制。": {
+    "zh": "无法自动复制，请选中链接手动复制。",
+    "en": "Could not copy automatically. Select the link and copy it manually.",
+    "id": "Tidak dapat menyalin otomatis. Pilih tautan dan salin secara manual."
+  },
+  "正在部署…": {
+    "zh": "正在部署…",
+    "en": "Publishing…",
+    "id": "Menerbitkan…"
+  },
+  "临时部署": {
+    "zh": "临时部署",
+    "en": "Publish temporarily",
+    "id": "Terbitkan sementara"
+  },
+  "将当前作品及照片上传到网站，任何持有链接的人都可查看。链接 7 天后失效，最大支持 20 MB。": {
+    "zh": "将当前作品及照片上传到网站，任何持有链接的人都可查看。链接 7 天后失效，最大支持 20 MB。",
+    "en": "Upload this work and its photos. Anyone with the link can view it. Links expire in 7 days; maximum 20 MB.",
+    "id": "Unggah karya dan fotonya. Siapa pun dengan tautan dapat melihatnya. Tautan berlaku 7 hari; maksimal 20 MB."
+  },
+  "部署口令": {
+    "zh": "部署口令",
+    "en": "Publishing password",
+    "id": "Kata sandi penerbitan"
+  },
+  "上传并生成链接": {
+    "zh": "上传并生成链接",
+    "en": "Upload and create link",
+    "id": "Unggah dan buat tautan"
+  },
+  "临时作品链接": {
+    "zh": "临时作品链接",
+    "en": "Temporary page link",
+    "id": "Tautan halaman sementara"
+  },
+  "失效时间：{time}": {
+    "zh": "失效时间：{time}",
+    "en": "Expires: {time}",
+    "id": "Kedaluwarsa: {time}"
+  },
+  "链接展示部署时的快照，继续编辑后需重新部署。": {
+    "zh": "链接展示部署时的快照，继续编辑后需重新部署。",
+    "en": "This link shows a snapshot. Publish again after making edits.",
+    "id": "Tautan menampilkan salinan saat diterbitkan. Terbitkan lagi setelah mengedit."
+  },
+  "复制链接": {
+    "zh": "复制链接",
+    "en": "Copy link",
+    "id": "Salin tautan"
+  },
+  "临时部署尚未配置，请先绑定 R2 并设置部署口令。": {
+    "zh": "临时部署尚未配置，请先绑定 R2 并设置部署口令。",
+    "en": "Publishing is not configured. Bind R2 and set a publishing password first.",
+    "id": "Penerbitan belum dikonfigurasi. Hubungkan R2 dan atur kata sandi penerbitan."
+  },
+  "部署口令不正确。": {
+    "zh": "部署口令不正确。",
+    "en": "Incorrect publishing password.",
+    "id": "Kata sandi penerbitan salah."
+  },
+  "请选择 HTML 作品。": {
+    "zh": "请选择 HTML 作品。",
+    "en": "Please select an HTML work.",
+    "id": "Pilih karya HTML."
+  },
+  "作品内容为空。": {
+    "zh": "作品内容为空。",
+    "en": "The work is empty.",
+    "id": "Karya kosong."
+  },
   "封面": {
     "zh": "封面",
     "en": "Cover",
