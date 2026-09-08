@@ -1,3 +1,4 @@
+import { ChartPage, ChartEditor } from './ChartPage.jsx';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageData, movePage } from './pages.js';
 import exportStyles from './index.css?inline';
@@ -1489,6 +1490,7 @@ export default function YearInReviewGenerator() {
   const prevSlide = () => setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides);
 
   const renderContent = (slide = currentSlide, contentData = data) => {
+    if (pages[slide].type === 'charts') return <ChartPage chart={contentData.chart} theme={currentTheme} year={contentData.year} watermark={t.madeBy} />;
     const props = { slide: PAGE_TYPES.indexOf(pages[slide].type), data: contentData, t };
     switch(currentTheme) {
       case 'retro': return <RenderRetro {...props} />;
@@ -1714,6 +1716,8 @@ export default function YearInReviewGenerator() {
               <input type="text" value={data.subtitle} onChange={(e) => handleInputChange('subtitle', e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"/>
             </div>
           </section>
+
+          {activePage.type === 'charts' && <ChartEditor chart={data.chart} onChange={chart => setData(previous => ({ ...previous, chart }))} />}
 
           {activePage.type === 'stats' && <>
           {/* STATS SECTION */}

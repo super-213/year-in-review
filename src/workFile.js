@@ -1,3 +1,4 @@
+import { validateChart } from './charts.js';
 import { PAGE_TYPES, PAGE_FIELDS, pageData } from './pages.js';
 import { viewerStyles, viewerScript } from './workViewer.js';
 
@@ -26,6 +27,7 @@ export function validateWork(work) {
   const input = work.data;
   if (!input || typeof input !== 'object') fail();
   const data = Object.fromEntries(['year', 'title', 'subtitle', 'summary'].map(field => [field, text(input[field])]));
+  if (input.chart !== undefined) data.chart = validateChart(input.chart);
   data.stats = rows(input.stats, 6, ['label', 'value', 'icon']);
   if (data.stats.some(stat => !ICON_IDS.includes(stat.icon))) fail();
   data.highlights = rows(input.highlights, 4, ['title', 'desc', 'emoji']).map((item, i) => {
@@ -49,6 +51,7 @@ export function validateWork(work) {
       const fields = PAGE_FIELDS[page.type];
       if (fields.some(field => !(field in page.content))) fail();
       const content = Object.fromEntries(fields.map(field => [field, page.content[field]]));
+      if (page.type === 'charts') content.chart = validateChart(content.chart);
       const validated = validateWork({ ...result, version: 1, data: { ...data, ...content } }).data;
       return { id: page.id, type: page.type, content: Object.fromEntries(fields.map(field => [field, validated[field]])) };
     });

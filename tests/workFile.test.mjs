@@ -126,3 +126,27 @@ test('export embeds selected page images without fetching omitted default photos
     assert.equal(saved.pages[1].content.highlights[0].image, photo);
   } finally { globalThis.fetch = originalFetch; globalThis.FileReader = originalReader; }
 });
+
+test('all five charts round-trip as independent pages across all themes', async () => {
+  const { CHART_TYPES, DEFAULT_CHART } = await import('../src/charts.js');
+  const { createPage } = await import('../src/pages.js');
+  for (const theme of THEME_IDS) {
+    const work = { ...fixture(), version: 2, theme };
+    work.pages = Object.keys(CHART_TYPES).map(type => createPage('charts', { chart: { ...DEFAULT_CHART, type } }));
+    work.pages[0].content.chart.items[0].value = 0;
+    assert.equal(work.pages[1].content.chart.items[0].value, 72);
+    const html = createWorkHtml(work, work.pages.map(() => '<svg></svg>'), '');
+    assert.deepEqual(parseWorkHtml(html), work);
+  }
+});
+
+test('chart validation handles zeroes and rejects unsafe numbers and missing configuration', async () => {
+  const { DEFAULT_CHART, validateChart } = await import('../src/charts.js');
+  const zeros = { ...DEFAULT_CHART, items: DEFAULT_CHART.items.map(item => ({ ...item, value: 0 })) };
+  assert.deepEqual(validateChart(zeros), zeros);
+  for (const patch of [{ type: 'pie' }, { max: 0 }, { max: Infinity }, { items: [] }, { items: [{ label: 'x', value: -1 }, ...zeros.items] }, { items: [{ label: 'x', value: NaN }, ...zeros.items] }]) {
+    assert.throws(() => validateChart({ ...zeros, ...patch }));
+  }
+  const work = { ...fixture(), version: 2, pages: [{ id: 'chart', type: 'charts', content: {} }] };
+  assert.throws(() => validateWork(work));
+});
