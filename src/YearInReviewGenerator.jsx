@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageData, movePage } from './pages.js';
+import exportStyles from './index.css?inline';
+import { WORK_FORMAT, validateWork, parseWorkHtml, embedPhotos, createWorkHtml } from './workFile';
 import { 
   ChevronLeft, ChevronRight, Coffee, Book, Activity, Zap, Heart, Briefcase, 
   Music, Globe, Terminal, Feather, Smartphone, RefreshCw, Layout, Type, 
@@ -260,6 +263,11 @@ const generateSmartSummary = (data, lang) => {
  * ------------------------------------------------------------------
  */
 
+// Shared by all twelve themes and by the standalone HTML export.
+const HighlightIcon = ({ item, fallback }) => item.image ? (
+  <img src={item.image} alt={item.title || 'Memory'} className="inline-block object-contain align-middle" style={{ width: '1.6em', height: '1.6em', maxWidth: '100%', maxHeight: '100%' }} />
+) : (item.emoji || fallback || '✨');
+
 // --- 1. Retro ---
 const RenderRetro = ({ slide, data, t }) => {
   const bgColor = "bg-emerald-100";
@@ -304,7 +312,7 @@ const RenderRetro = ({ slide, data, t }) => {
         <div className="space-y-4 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
            {data.highlights.map((h, i) => (
              <div key={h.id} className={`${borderStyle} p-3 relative flex gap-3`}>
-               <div className={`shrink-0 w-10 h-10 bg-emerald-900 text-white flex items-center justify-center text-xl font-bold border-2 border-white`}>{h.emoji || (i+1)}</div>
+               <div className={`shrink-0 w-10 h-10 bg-emerald-900 text-white flex items-center justify-center text-xl font-bold border-2 border-white`}>{<HighlightIcon item={h} fallback={i+1} />}</div>
                <div className="min-w-0 flex-1">
                   <div className="font-bold uppercase text-sm mb-1 truncate">{h.title}</div>
                   {/* [UPDATED] line-clamp-3 and smaller font for better visibility */}
@@ -388,9 +396,9 @@ if (slide === 2) return (
            <h3 className="text-4xl font-black leading-none">{t.keyPoints}</h3>
          </div>
          <div className="flex-1 p-6 -mt-8 space-y-4 min-h-0 overflow-y-auto scrollbar-hide">
-           {data.highlights.map((h, i) => (
+           {data.highlights.map((h) => (
              <div key={h.id} className={`${cardBg} p-5 shadow-xl border-l-8 ${borderClass} flex gap-4 items-start`}>
-               <div className="text-4xl shrink-0">{h.emoji}</div>
+               <div className="text-4xl shrink-0">{<HighlightIcon item={h} />}</div>
                <div className="min-w-0">
                   <h4 className="text-xl font-black uppercase mb-1 truncate">{h.title}</h4>
                   {/* [UPDATED] line-clamp-3 and slightly smaller text */}
@@ -467,7 +475,7 @@ const RenderLoFi = ({ slide, data, t }) => {
          <div className="relative z-10 space-y-6 mt-4 flex-1 min-h-0 overflow-y-auto scrollbar-hide pt-4">
            {data.highlights.map((h, i) => (
              <div key={h.id} className={`bg-white p-4 shadow-sm border border-stone-200 ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative`}>
-               <div className="absolute -top-3 -right-3 text-3xl filter drop-shadow-md transform rotate-12">{h.emoji}</div>
+               <div className="absolute -top-3 -right-3 text-3xl filter drop-shadow-md transform rotate-12">{<HighlightIcon item={h} />}</div>
                <div className="flex items-center gap-2 mb-2 border-b border-stone-100 pb-2">
                  <div className={`w-2 h-2 rounded-full bg-stone-300`}></div>
                  <h4 className="font-bold font-sans text-sm uppercase tracking-wide truncate">{h.title}</h4>
@@ -522,7 +530,7 @@ const RenderNeon = ({ slide, data, t }) => {
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(0,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.03)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
         <h3 className={`text-xl font-bold uppercase mb-8 ${textSecondary} flex items-center gap-2 ${glowTextSecondary}`}><Activity className="w-5 h-5 animate-pulse" /> {t.neuralStats}</h3>
         <div className="grid grid-cols-2 gap-4 z-10 flex-1 min-h-0 overflow-y-auto scrollbar-hide content-start">
-          {data.stats.map((stat, idx) => (
+          {data.stats.map((stat) => (
             <div key={stat.id} className={`${borderStyle} p-4 flex flex-col items-center justify-center aspect-square rounded-lg relative overflow-hidden group`}>
               <div className={`absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity`}></div>
               <div className={`w-8 h-8 mb-2 ${textSecondary} group-hover:scale-110 transition-transform ${glowTextSecondary}`}>{ICON_MAP[stat.icon]}</div>
@@ -540,9 +548,9 @@ const RenderNeon = ({ slide, data, t }) => {
          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(0,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.03)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
          <h3 className={`text-xl font-bold uppercase mb-8 ${textPrimary} ${glowText} flex items-center gap-2`}><Zap className="w-5 h-5" /> {t.coreMem}</h3>
          <div className="flex-1 space-y-6 z-10 min-h-0 overflow-y-auto scrollbar-hide">
-           {data.highlights.map((h, i) => (
+           {data.highlights.map((h) => (
              <div key={h.id} className={`${borderStyle} p-4 rounded-lg relative flex gap-3 items-start`}>
-               <div className={`text-2xl ${glowTextSecondary}`}>{h.emoji}</div>
+               <div className={`text-2xl ${glowTextSecondary}`}>{<HighlightIcon item={h} />}</div>
                <div>
                   <div className={`font-bold uppercase text-sm mb-1 ${textSecondary} ${glowTextSecondary} truncate`}>// {h.title}</div>
                   {/* [UPDATED] line-clamp-3, text-xs */}
@@ -589,7 +597,7 @@ const RenderMinimal = ({ slide, data, t }) => {
       <div className={`h-full ${bgStyle} p-8 font-serif flex flex-col select-none`}>
         <h3 className={`text-xl font-normal uppercase tracking-widest text-center mb-12 ${textPrimary}`}>{t.keyFigures}</h3>
         <div className={`grid grid-cols-2 gap-px bg-stone-200 border-stone-200 border flex-1 min-h-0 overflow-y-auto scrollbar-hide content-start`}>
-          {data.stats.map((stat, idx) => (
+          {data.stats.map((stat) => (
             <div key={stat.id} className={`bg-white p-6 flex flex-col items-center justify-center aspect-square`}>
               <div className={`text-4xl font-light ${textPrimary} mb-2`}>{stat.value}</div>
               <div className={`text-xs font-sans font-bold uppercase tracking-widest ${textSecondary}`}>{stat.label}</div>
@@ -604,11 +612,11 @@ const RenderMinimal = ({ slide, data, t }) => {
     if (slide === 2) {
         return (
           <div className={`h-full ${bgStyle} p-8 font-serif flex flex-col select-none`}>
-             <h3 className={`text-xl font-normal uppercase tracking-widest text-center mb-6 ${textPrimary}`}>{t.highlights}</h3>
+             <h3 className={`text-xl font-normal uppercase tracking-widest text-center mb-6 ${textPrimary}`}>{t.highlights.replace(/^\d+\.\s*/, '')}</h3>
              <div className="flex-1 flex flex-col justify-center space-y-4 min-h-0 overflow-y-auto scrollbar-hide py-1">
-               {data.highlights.map((h, i) => (
+               {data.highlights.map((h) => (
                  <div key={h.id} className="text-center">
-                   <div className="flex justify-center mb-1 text-2xl">{h.emoji}</div>
+                   <div className="flex justify-center mb-1 text-2xl">{<HighlightIcon item={h} />}</div>
                    <h4 className={`text-lg font-normal uppercase tracking-wide mb-1 ${textPrimary} truncate`}>{h.title}</h4>
                    {/* [UPDATED] line-clamp-3 + small text */}
                    <p className="text-[10px] leading-tight text-stone-500 font-light italic px-4 line-clamp-3">{h.desc}</p>
@@ -624,7 +632,7 @@ const RenderMinimal = ({ slide, data, t }) => {
         const gridClass = getPhotoGridClasses(data.photos.length);
         return (
             <div className={`h-full ${bgStyle} p-8 relative select-none flex flex-col`}>
-                <h3 className={`text-xl font-normal uppercase tracking-widest text-center mb-8 ${textPrimary}`}>{t.gallery}</h3>
+                <h3 className={`text-xl font-normal uppercase tracking-widest text-center mb-8 ${textPrimary}`}>{t.gallery.replace(/^\d+\.\s*/, '')}</h3>
                 <div className={`grid gap-2 flex-1 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo,i) => (
                         <div key={photo.id} className={`bg-stone-200 overflow-hidden ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
@@ -693,7 +701,7 @@ const RenderJournal = ({ slide, data, t }) => {
                  <div className="flex-1 min-w-0">
                   <div className="flex justify-between">
                       <h4 className={`font-bold ${penColor} font-handwriting text-lg mb-1 truncate`}>{h.title}</h4>
-                      <span className="text-xl">{h.emoji}</span>
+                      <span className="text-xl">{<HighlightIcon item={h} />}</span>
                   </div>
                   {/* [UPDATED] line-clamp-3 and text-xs */}
                   <p className={`text-xs leading-snug ${pencilColor} font-handwriting line-clamp-3`}>{h.desc}</p>
@@ -733,7 +741,7 @@ const RenderGlass = ({ slide, data, t }) => {
     const bgStyle = "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500";
     const cardStyle = "backdrop-blur-xl bg-white/20 border border-white/30 shadow-lg text-white";
     const watermark = <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 text-[6px] text-white opacity-50 z-20 pointer-events-none`}>{t.madeBy}</div>;
-    const textColor = "text-white";
+
 
     if(slide===0) return <div className={`h-full ${bgStyle} flex flex-col justify-center items-center text-center font-sans`}>
         <div className={`${cardStyle} p-8 rounded-3xl`}><h1 className="text-7xl font-black">{data.year}</h1><h2>{data.title}</h2><p className="mt-4 text-white/80">{data.subtitle}</p></div>{watermark}
@@ -758,13 +766,13 @@ const RenderGlass = ({ slide, data, t }) => {
      
      if (slide === 2) return (
         <div className={`h-full ${bgStyle} p-6 font-sans relative select-none overflow-hidden`}>
-          <h3 className={`text-2xl font-bold text-white mb-8 drop-shadow-md`}>{t.highlights}</h3>
+          <h3 className={`text-2xl font-bold text-white mb-8 drop-shadow-md`}>{t.highlights.replace(/^\d+\.\s*/, '')}</h3>
           <div className="space-y-4 relative z-10 min-h-0 overflow-y-auto scrollbar-hide">
-            {data.highlights.map((h, i) => (
+            {data.highlights.map((h) => (
               <div key={h.id} className={`${cardStyle} p-5 rounded-2xl`}>
                 <div className="flex justify-between items-center mb-1">
                     <h4 className="text-lg font-bold">{h.title}</h4>
-                    <span className="text-xl">{h.emoji}</span>
+                    <span className="text-xl">{<HighlightIcon item={h} />}</span>
                 </div>
                 {/* [UPDATED] text-xs and line-clamp-3 */}
                 <p className={`text-xs text-white opacity-90 leading-snug line-clamp-3`}>{h.desc}</p>
@@ -779,7 +787,7 @@ const RenderGlass = ({ slide, data, t }) => {
         const gridClass = getPhotoGridClasses(data.photos.length);
         return (
             <div className={`h-full ${bgStyle} p-6 font-sans flex flex-col relative select-none overflow-hidden`}>
-                <h3 className="text-2xl font-bold text-white mb-6 drop-shadow-md">{t.gallery}</h3>
+                <h3 className="text-2xl font-bold text-white mb-6 drop-shadow-md">{t.gallery.replace(/^\d+\.\s*/, '')}</h3>
                 <div className={`grid gap-3 flex-1 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`${cardStyle} p-1 overflow-hidden relative rounded-xl ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
@@ -820,7 +828,7 @@ const RenderBrutal = ({ slide, data, t }) => {
         <div className={`h-full ${bgStyle} p-6 font-sans relative select-none flex flex-col`}>
           <h3 className={`text-4xl font-black ${textPrimary} mb-8 underline decoration-wavy decoration-4 decoration-purple-500`}>{t.myStats}_</h3>
           <div className="grid grid-cols-2 gap-6 flex-1 min-h-0 overflow-y-auto scrollbar-hide content-start">
-            {data.stats.map((stat, i) => (
+            {data.stats.map((stat) => (
               <div key={stat.id} className={`${cardStyle} p-4 flex flex-col items-center justify-center aspect-square hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all`}>
                 <div className={`w-10 h-10 mb-2 ${textPrimary}`}>{ICON_MAP[stat.icon]}</div>
                 <div className={`text-4xl font-black ${textPrimary}`}>{stat.value}</div>
@@ -837,11 +845,11 @@ const RenderBrutal = ({ slide, data, t }) => {
         <div className={`h-full ${bgStyle} p-6 font-sans relative select-none flex flex-col`}>
           <h3 className={`text-4xl font-black ${textPrimary} mb-8 bg-green-400 border-4 border-black inline-block p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0`}>{t.wins}</h3>
           <div className="space-y-6 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
-            {data.highlights.map((h, i) => (
+            {data.highlights.map((h) => (
               <div key={h.id} className={`${cardStyle} p-4`}>
                  <div className="flex justify-between">
                     <h4 className="text-xl font-black uppercase mb-1 bg-pink-300 inline-block px-1 border-2 border-black truncate max-w-[80%]">{h.title}</h4>
-                    <span className="text-2xl">{h.emoji}</span>
+                    <span className="text-2xl">{<HighlightIcon item={h} />}</span>
                  </div>
                 {/* [UPDATED] line-clamp-3, slightly smaller font */}
                 <p className={`${textPrimary} font-medium text-sm leading-tight mt-2 line-clamp-3`}>{h.desc}</p>
@@ -919,7 +927,7 @@ const RenderVapor = ({ slide, data, t }) => {
            <div className="space-y-4 relative z-10 flex-1 min-h-0 overflow-y-auto scrollbar-hide pt-2">
              {data.highlights.map(h => (
                <div key={h.id} className="bg-gradient-to-r from-cyan-900/80 to-purple-900/80 p-4 border-l-4 border-cyan-400 relative">
-                 <div className="absolute top-2 right-2 text-2xl opacity-50">{h.emoji}</div>
+                 <div className="absolute top-2 right-2 text-2xl opacity-50">{<HighlightIcon item={h} />}</div>
                  <h4 className="text-white font-bold text-lg">{h.title}</h4>
                  {/* [UPDATED] line-clamp-3 and text-xs */}
                  <p className="text-pink-200 text-xs line-clamp-3">{h.desc}</p>
@@ -985,7 +993,7 @@ const RenderAcademia = ({ slide, data, t }) => {
             {data.highlights.map((h, i) => (
               <div key={h.id}>
                 <span className="text-[#d4af37] text-xl font-bold mr-2">§ {i+1}</span>
-                <span className="mr-2 text-xl">{h.emoji}</span>
+                <span className="mr-2 text-xl">{<HighlightIcon item={h} />}</span>
                 <h4 className="inline text-lg font-bold">{h.title}</h4>
                 {/* [UPDATED] line-clamp-3 and text-xs */}
                 <p className="text-[#8a7e68] mt-1 text-xs leading-relaxed pl-8 line-clamp-3">{h.desc}</p>
@@ -1052,7 +1060,7 @@ const RenderPop = ({ slide, data, t }) => {
            <div className="space-y-4 relative z-10 flex-1 min-h-0 overflow-y-auto scrollbar-hide pt-2">
              {data.highlights.map(h => (
                <div key={h.id} className="bg-white border-4 border-black p-4 shadow-[4px_4px_0px_black] relative mt-2">
-                 <div className="absolute -top-3 -right-3 text-3xl transform rotate-12">{h.emoji}</div>
+                 <div className="absolute -top-3 -right-3 text-3xl transform rotate-12">{<HighlightIcon item={h} />}</div>
                  <h4 className="text-xl font-black uppercase">{h.title}</h4>
                  {/* [UPDATED] line-clamp-3 and text-xs */}
                  <p className="text-xs font-bold line-clamp-3">{h.desc}</p>
@@ -1126,7 +1134,7 @@ const RenderBlueprint = ({ slide, data, t }) => {
                     <div className="text-xs font-bold">ITEM {i+1}</div>
                     <div className="text-sm truncate">{h.title}</div>
                   </div>
-                  <div className="text-xl">{h.emoji}</div>
+                  <div className="text-xl">{<HighlightIcon item={h} />}</div>
                 </div>
               ))}
             </div>
@@ -1165,33 +1173,73 @@ const RenderBlueprint = ({ slide, data, t }) => {
  * ------------------------------------------------------------------
  */
 export default function YearInReviewGenerator() {
-  const [data, setData] = useState(() => {
+  const [initialWork] = useState(() => {
     try {
-      const savedData = localStorage.getItem('yearInReviewData');
-      return savedData ? JSON.parse(savedData) : TEMPLATES.id; 
-    } catch (e) {
-      console.error("Failed to load from local storage", e);
-      return TEMPLATES.id; 
-    }
+      const draft = localStorage.getItem('yearInReviewWork');
+      if (draft) return validateWork(JSON.parse(draft));
+    } catch (error) { console.error('Failed to load draft', error); }
+    try {
+      return validateWork({ format: WORK_FORMAT, version: 1,
+        data: JSON.parse(localStorage.getItem('yearInReviewData')) || TEMPLATES.id,
+        theme: localStorage.getItem('yearInReviewTheme') || 'retro',
+        language: localStorage.getItem('yearInReviewLanguage') === 'en' ? 'en' : 'id' });
+    } catch { return { data: TEMPLATES.id, theme: 'retro', language: 'id' }; }
   });
-   
-  const [currentTheme, setCurrentTheme] = useState('retro'); 
+  const [documentData, setDocumentData] = useState(() => ({ data: initialWork.data, pages: initialWork.pages || defaultPages(initialWork.data) }));
+  const { data: baseData, pages } = documentData;
+  const [currentTheme, setCurrentTheme] = useState(initialWork.theme);
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+  const activePage = pages[currentSlide];
+  const data = pageData(baseData, activePage);
+  // Capture the page ID so asynchronous image uploads still update their original page.
+  const setData = (update) => {
+    const pageId = activePage.id;
+    setDocumentData(previous => {
+      const page = previous.pages.find(item => item.id === pageId);
+      if (!page) return previous;
+      const before = pageData(previous.data, page);
+      const next = typeof update === 'function' ? update(before) : update;
+      const fields = PAGE_FIELDS[page.type];
+      const content = Object.fromEntries(fields.map(field => [field, next[field]]));
+      const shared = { ...previous.data };
+      for (const field of ['year', 'title', 'subtitle']) shared[field] = next[field];
+      return { data: shared, pages: previous.pages.map(item => item.id === pageId ? { ...item, content } : item) };
+    });
+  };
+  const addPage = type => {
+    const page = createPage(type, data);
+    setDocumentData(previous => ({ ...previous, pages: [...previous.pages, page] }));
+    setCurrentSlide(pages.length);
+  };
+  const removePage = index => {
+    if (pages.length === 1) return;
+    setDocumentData(previous => ({ ...previous, pages: previous.pages.filter((_, i) => i !== index) }));
+    setCurrentSlide(current => index < current ? current - 1 : Math.min(current, pages.length - 2));
+  };
+  const reorderPage = (index, direction) => {
+    const reordered = movePage(pages, index, index + direction);
+    setDocumentData(previous => ({ ...previous, pages: reordered }));
+    setCurrentSlide(reordered.findIndex(page => page.id === activePage.id));
+  };
+
   // Clean Mode Logic for Screenshots
   const [isCleanMode, setIsCleanMode] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
-  const [language, setLanguage] = useState('id'); 
+  const [language, setLanguage] = useState(initialWork.language);
+  const [fileStatus, setFileStatus] = useState('');
+  const [highlightImageError, setHighlightImageError] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const importRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
 
   // --- [NEW] Onboarding State ---
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const t = TRANSLATIONS[language]; 
-  const totalSlides = 5; 
+  const totalSlides = pages.length; 
   const scrollContainerRef = useRef(null);
 
 // --- [NEW] Dynamic Favicon & Meta Title ---
@@ -1284,15 +1332,59 @@ export default function YearInReviewGenerator() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('yearInReviewWork', JSON.stringify({ format: WORK_FORMAT, version: 2, data: baseData, pages, theme: currentTheme, language }));
+        setSaveStatus('已自动保存到此浏览器');
+      } catch {
+        setSaveStatus('本地保存失败（可能是照片过大），请导出作品备份');
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [baseData, pages, currentTheme, language]);
+
+  const importWork = async (event) => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
     try {
-      localStorage.setItem('yearInReviewData', JSON.stringify(data));
-      setSaveStatus('Saved');
-      const timer = setTimeout(() => setSaveStatus(''), 2000);
-      return () => clearTimeout(timer);
-    } catch (e) {
-      setSaveStatus('Error saving');
+      if (file.size > 100 * 1024 * 1024) throw new Error('作品文件不能超过 100 MB。');
+      const work = parseWorkHtml(await file.text());
+      setDocumentData({ data: work.data, pages: work.pages || defaultPages(work.data) });
+      setCurrentTheme(work.theme);
+      setLanguage(work.language);
+      setCurrentSlide(0);
+      setFileStatus('作品已导入，可以继续编辑。');
+    } catch (error) {
+      setFileStatus(`导入失败：${error.message}`);
     }
-  }, [data]);
+  };
+
+  const exportWork = async () => {
+    setIsExporting(true);
+    setFileStatus('正在打包作品和照片…');
+    try {
+      const work = await embedPhotos(validateWork({ format: WORK_FORMAT, version: 2, data: baseData, pages, theme: currentTheme, language }));
+      const { renderToStaticMarkup } = await import('react-dom/server');
+      const slides = work.pages.map((page, index) => renderToStaticMarkup(renderContent(index, pageData(work.data, page))));
+      const html = createWorkHtml(work, slides, exportStyles);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      if (blob.size > 100 * 1024 * 1024) throw new Error('作品超过 100 MB，请缩小照片后重试。');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'index.html';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setFileStatus('已导出 index.html：可直接部署，也可重新导入编辑。');
+    } catch (error) {
+      setFileStatus(`导出失败：${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
    
@@ -1335,6 +1427,21 @@ export default function YearInReviewGenerator() {
     if (data.highlights.length > 2) setData(prev => ({ ...prev, highlights: prev.highlights.filter(h => h.id !== id) }));
   };
 
+  const handleHighlightImageUpload = (id, event) => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    setHighlightImageError(null);
+    if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/i.test(file.type) || file.size > 10 * 1024 * 1024) {
+      setHighlightImageError({ id, pageId: activePage.id, message: '请选择不超过 10 MB 的 PNG、JPEG、GIF、WebP、AVIF 或 BMP 图片。' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => handleHighlightChange(id, 'image', reader.result);
+    reader.onerror = () => setHighlightImageError({ id, pageId: activePage.id, message: '图片读取失败，请重新选择。' });
+    reader.readAsDataURL(file);
+  };
+
   const handlePhotoUpload = (id, e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1366,21 +1473,23 @@ export default function YearInReviewGenerator() {
 
   const resetData = () => {
     if (confirm("Are you sure?")) {
-      setData(TEMPLATES[language]);
+      setDocumentData({ data: TEMPLATES[language], pages: defaultPages(TEMPLATES[language]) });
+      setCurrentSlide(0);
       localStorage.removeItem('yearInReviewData');
     }
   };
 
   const generateQuote = () => {
-    const smartQuote = generateSmartSummary(data, language);
+    const statsPage = pages.find(page => page.type === 'stats');
+    const smartQuote = generateSmartSummary({ ...data, stats: statsPage?.content.stats || data.stats }, language);
     handleInputChange('summary', smartQuote);
   };
 
   const nextSlide = () => setCurrentSlide(prev => (prev + 1) % totalSlides);
   const prevSlide = () => setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides);
 
-  const renderContent = () => {
-    const props = { slide: currentSlide, data, t };
+  const renderContent = (slide = currentSlide, contentData = data) => {
+    const props = { slide: PAGE_TYPES.indexOf(pages[slide].type), data: contentData, t };
     switch(currentTheme) {
       case 'retro': return <RenderRetro {...props} />;
       case 'swiss': return <RenderSwiss {...props} />;
@@ -1548,9 +1657,48 @@ export default function YearInReviewGenerator() {
                 </button>
             </div>
           </header>
+
+          <section className="mb-8 border-b border-slate-200 pb-6" aria-label="作品文件">
+            <div className="flex flex-wrap gap-3">
+              <button onClick={exportWork} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
+                <Save className="w-4 h-4" />{isExporting ? '正在导出…' : '导出可部署 HTML'}
+              </button>
+              <button onClick={() => importRef.current.click()} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
+                <Upload className="w-4 h-4" />导入作品
+              </button>
+              <input ref={importRef} type="file" accept=".html,text/html" onChange={importWork} className="hidden" aria-label="选择 HTML 作品" />
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。</p>
+            <p className="mt-2 text-xs text-slate-500" role="status">{saveStatus}</p>
+            <p className="mt-2 text-sm text-indigo-700" role="status">{fileStatus}</p>
+          </section>
            
+          <section className="mb-8 border-b border-slate-200 pb-6" aria-label="页面管理">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-800">页面管理</h3>
+              <span className="text-xs text-slate-500">共 {totalSlides} 页</span>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">选择页面编辑，可重复添加同一种界面。每页内容独立，年份、标题和风格共用。</p>
+            <ol className="space-y-2 mb-4">
+              {pages.map((page, index) => (
+                <li key={page.id} className={`flex items-center gap-1 rounded-lg border p-1 ${index === currentSlide ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'}`}>
+                  <button onClick={() => { setCurrentSlide(index); setHighlightImageError(null); }} aria-current={index === currentSlide ? 'page' : undefined} className="flex-1 text-left px-3 py-2 text-sm font-medium rounded focus-visible:outline-indigo-600">
+                    {index + 1}. {PAGE_LABELS[page.type]}
+                  </button>
+                  <button onClick={() => reorderPage(index, -1)} disabled={index === 0} aria-label={`上移第 ${index + 1} 页`} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↑</button>
+                  <button onClick={() => reorderPage(index, 1)} disabled={index === pages.length - 1} aria-label={`下移第 ${index + 1} 页`} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↓</button>
+                  <button onClick={() => removePage(index)} disabled={pages.length === 1} aria-label={`删除第 ${index + 1} 页`} title={pages.length === 1 ? '至少保留一页' : '删除页面'} className="p-2 rounded text-slate-400 hover:text-red-600 disabled:opacity-25"><Trash2 className="w-4 h-4" /></button>
+                </li>
+              ))}
+            </ol>
+            <div className="flex flex-wrap gap-2">
+              {PAGE_TYPES.map(type => <button key={type} onClick={() => addPage(type)} className="flex items-center gap-1 border border-dashed border-slate-300 rounded-lg px-3 py-2 text-xs font-medium hover:border-indigo-500 hover:text-indigo-600"><Plus className="w-3 h-3" />{PAGE_LABELS[type]}</button>)}
+            </div>
+            <p className="mt-4 text-sm font-bold text-indigo-700">正在编辑：第 {currentSlide + 1} 页 · {PAGE_LABELS[activePage.type]}</p>
+          </section>
+
           <section className="mb-10 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><Type className="w-4 h-4" /> {t.coreInfo}</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><Type className="w-4 h-4" /> {t.coreInfo.replace(/^\d+\.\s*/, '')}</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-1">
                 <label className="block text-xs font-bold text-slate-500 mb-1">{t.year}</label>
@@ -1567,10 +1715,11 @@ export default function YearInReviewGenerator() {
             </div>
           </section>
 
+          {activePage.type === 'stats' && <>
           {/* STATS SECTION */}
           <section className="mb-10">
             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Activity className="w-4 h-4" /> {t.numbers}</h3>
+               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Activity className="w-4 h-4" /> {t.numbers.replace(/^\d+\.\s*/, '')}</h3>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               {data.stats.map((stat) => (
@@ -1594,10 +1743,13 @@ export default function YearInReviewGenerator() {
             )}
           </section>
 
+          </>}
+
+          {activePage.type === 'highlights' && <>
           {/* HIGHLIGHTS SECTION (With Character Counter) */}
           <section className="mb-10">
             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Layout className="w-4 h-4" /> {t.highlights}</h3>
+               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Layout className="w-4 h-4" /> {t.highlights.replace(/^\d+\.\s*/, '')}</h3>
             </div>
             <div className="space-y-4 mb-4">
               {data.highlights.map((item) => (
@@ -1607,14 +1759,15 @@ export default function YearInReviewGenerator() {
                    {/* Emoji & Title Row */}
                    <div className="flex gap-2 mb-2 items-start">
                      <div className="w-12 flex-shrink-0">
-                       <input 
+                       {item.image ? <img src={item.image} alt={`${item.title} 图片`} className="w-12 h-12 rounded-lg object-contain bg-slate-50" /> : <input
                          type="text" 
                          value={item.emoji || ''} 
                          onChange={(e) => handleHighlightChange(item.id, 'emoji', e.target.value)} 
                          className="w-full h-10 text-center text-xl border border-slate-200 rounded-lg focus:border-indigo-500 outline-none" 
                          placeholder="✨" 
-                         maxLength={2} 
-                       />
+                         aria-label={`${item.title} Emoji`}
+                         maxLength={16}
+                       />}
                      </div>
                      <div className="flex-1 relative">
                         <input 
@@ -1632,6 +1785,15 @@ export default function YearInReviewGenerator() {
                      </div>
                    </div>
 
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <label className="relative cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800 rounded focus-within:ring-2 focus-within:ring-indigo-500 px-1 py-1">
+                      <Upload className="w-3 h-3 inline-block mr-1" />{item.image ? '替换图片' : '上传图片'}
+                      <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" className="sr-only" aria-label={`${item.title} 上传图片`} onChange={event => handleHighlightImageUpload(item.id, event)} />
+                    </label>
+                    {item.image && <button type="button" onClick={() => handleHighlightChange(item.id, 'image', '')} className="text-xs text-slate-500 hover:text-red-600">移除图片，恢复 Emoji</button>}
+                    <span className="text-[10px] text-slate-400">支持 Emoji 或图片</span>
+                  </div>
+                  {highlightImageError?.pageId === activePage.id && highlightImageError?.id === item.id && <p role="alert" className="text-xs text-red-600 mb-2">{highlightImageError.message}</p>}
                   {/* Description Area */}
                   <div className="relative">
                     <textarea 
@@ -1657,10 +1819,13 @@ export default function YearInReviewGenerator() {
           </section>
 
 
+          </>}
+
+          {activePage.type === 'photos' && <>
           {/* PHOTOS SECTION */}
           <section className="mb-10">
              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><ImageIcon className="w-4 h-4" /> {t.gallery}</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><ImageIcon className="w-4 h-4" /> {t.gallery.replace(/^\d+\.\s*/, '')}</h3>
              </div>
              <div className="grid grid-cols-3 gap-4 mb-4">
                 {data.photos.map((photo) => (
@@ -1684,9 +1849,12 @@ export default function YearInReviewGenerator() {
              <p className="text-[10px] text-slate-400 mt-2">Tap an image to upload your own.</p>
           </section>
 
+          </>}
+
+          {activePage.type === 'summary' && <>
            <section className="mb-12">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Feather className="w-4 h-4" /> {t.summary}</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Feather className="w-4 h-4" /> {t.summary.replace(/^\d+\.\s*/, '')}</h3>
               <button onClick={generateQuote} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full flex items-center gap-1 hover:bg-indigo-100 transition-colors">
                 <Wand2 className="w-3 h-3" /> {t.autoGen}
               </button>
@@ -1694,9 +1862,11 @@ export default function YearInReviewGenerator() {
             <textarea value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-32 text-sm leading-relaxed shadow-sm resize-none" placeholder="Sum up the year..."/>
           </section>
 
+          </>}
+
           <section className="mb-10">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Palette className="w-4 h-4" /> {t.chooseVibe}</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Palette className="w-4 h-4" /> {t.chooseVibe.replace(/^\d+\.\s*/, '')}</h3>
               <div className="flex gap-2">
                 <button onClick={() => scrollThemes('left')} className="p-1 bg-slate-100 rounded hover:bg-slate-200">
                   <ChevronLeft className="w-3 h-3 text-slate-600" />
