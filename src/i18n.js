@@ -1,4 +1,9 @@
 export const MESSAGES = {
+  "新链接在其他地区可能需要约 60 秒同步，请稍后重试。": {
+    "zh": "新链接在其他地区可能需要约 60 秒同步，请稍后重试。",
+    "en": "New links may take about 60 seconds to sync to other regions. Please try again shortly.",
+    "id": "Tautan baru mungkin perlu sekitar 60 detik untuk tersinkron ke wilayah lain. Coba lagi sebentar."
+  },
   "正在上传临时作品…": {
     "zh": "正在上传临时作品…",
     "en": "Uploading temporary page…",
@@ -84,10 +89,10 @@ export const MESSAGES = {
     "en": "Copy link",
     "id": "Salin tautan"
   },
-  "临时部署尚未配置，请先绑定 R2 并设置部署口令。": {
-    "zh": "临时部署尚未配置，请先绑定 R2 并设置部署口令。",
-    "en": "Publishing is not configured. Bind R2 and set a publishing password first.",
-    "id": "Penerbitan belum dikonfigurasi. Hubungkan R2 dan atur kata sandi penerbitan."
+  "临时部署尚未配置，请先绑定 KV 并设置部署口令。": {
+    "zh": "临时部署尚未配置，请先绑定 KV 并设置部署口令。",
+    "en": "Publishing is not configured. Bind KV and set a publishing password first.",
+    "id": "Penerbitan belum dikonfigurasi. Hubungkan KV dan atur kata sandi penerbitan."
   },
   "部署口令不正确。": {
     "zh": "部署口令不正确。",

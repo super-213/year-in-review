@@ -36,17 +36,18 @@ async function readHtml(request) {
 
 export async function createDemo(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (!env.DEMOS || !env.DEPLOY_PASSWORD) return json({ error: '临时部署尚未配置，请先绑定 R2 并设置部署口令。' }, 503);
+  if (!env.DEMOS_KV || !env.DEPLOY_PASSWORD) return json({ error: '临时部署尚未配置，请先绑定 KV 并设置部署口令。' }, 503);
   if (!await authorized(request, env.DEPLOY_PASSWORD)) return json({ error: '部署口令不正确。' }, 401);
   let html;
   try { html = await readHtml(request); }
   catch (error) { return json({ error: error.message }, 400); }
   const id = crypto.randomUUID().replaceAll('-', '');
-  const expiresAt = new Date(Date.now() + DEMO_TTL_MS).toISOString();
+  const expiration = Math.floor((Date.now() + DEMO_TTL_MS) / 1000);
+  const expiresAt = new Date(expiration * 1000).toISOString();
   try {
-    await env.DEMOS.put(`demos/${id}.html`, html, {
-      httpMetadata: { contentType: 'text/html; charset=utf-8' },
-      customMetadata: { expiresAt },
+    await env.DEMOS_KV.put(`demos/${id}.html`, html, {
+      expiration,
+      metadata: { expiresAt },
     });
     return json({ id, path: `/demo/${id}`, expiresAt }, 201);
   } catch { return json({ error: '作品上传失败，请稍后重试。' }, 502); }
@@ -55,16 +56,18 @@ export async function createDemo(request, env) {
 export async function readDemo(request, env, id) {
   if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405, headers });
   if (!ID_PATTERN.test(id)) return new Response('作品不存在。', { status: 404, headers });
-  if (!env.DEMOS) return new Response('临时部署尚未配置。', { status: 503, headers });
+  if (!env.DEMOS_KV) return new Response('临时部署尚未配置。', { status: 503, headers });
   try {
     const key = `demos/${id}.html`;
-    const object = request.method === 'HEAD' ? await env.DEMOS.head(key) : await env.DEMOS.get(key);
-    if (!object) return new Response('作品不存在或已清理。', { status: 404, headers });
-    const expiry = Date.parse(object.customMetadata?.expiresAt);
+    const { value, metadata } = await env.DEMOS_KV.getWithMetadata(key, { type: 'stream', cacheTtl: 30 });
+    if (value === null) return new Response('作品不存在、已过期，或仍在同步中。刚部署的作品请稍后重试。', { status: 404, headers });
+    const expiry = Date.parse(metadata?.expiresAt);
     if (!Number.isFinite(expiry) || expiry <= Date.now()) {
+      await value.cancel();
       return new Response('这个临时作品已过期，请联系作者重新部署。', { status: 410, headers });
     }
-    return new Response(request.method === 'HEAD' ? null : object.body, {
+    if (request.method === 'HEAD') await value.cancel();
+    return new Response(request.method === 'HEAD' ? null : value, {
       headers: {
         ...headers,
         'Content-Type': 'text/html; charset=utf-8',

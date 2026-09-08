@@ -1610,7 +1610,7 @@ export default function YearInReviewGenerator() {
                 <p className="font-bold text-indigo-700">{tr('临时作品链接')}</p>
                 <a href={deployment.url} target="_blank" rel="noopener noreferrer" className="block break-all text-indigo-600 underline">{deployment.url}</a>
                 <p className="text-xs text-slate-500">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
-                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')}</p>
+                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
                 <button type="button" onClick={copyDeployment} className="font-bold text-indigo-700 underline">{tr('复制链接')}</button>
               </div>
             )}

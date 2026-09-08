@@ -10,5 +10,6 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/demo/*"]
   },
-  "r2_buckets": [{ "binding": "DEMOS", "bucket_name": "year-in-review-demos" }]
+  // Wrangler creates this KV namespace on first deploy and reuses the binding thereafter.
+  "kv_namespaces": [{ "binding": "DEMOS_KV" }]
 }

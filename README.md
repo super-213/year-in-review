@@ -30,7 +30,7 @@ Native "Download" buttons often fail on in-app mobile webviews (like clicking a 
 * Allows users to take perfect native device screenshots designed for Instagram Stories/TikTok dimensions.
 
 ### 🔒 Privacy-First (Local-First)
-* **Local editing:** Editing, importing and exporting run in your browser. Optional temporary publishing uploads the selected work and photos to Cloudflare R2 and creates a public link.
+* **Local editing:** Editing, importing and exporting run in your browser. Optional temporary publishing uploads the selected work and photos to Cloudflare Workers KV and creates a public link.
 * **Persistence:** Data is saved automatically to the browser's `localStorage`, allowing users to return later without losing their progress.
 
 ### 🚀 UX & Accessibility
@@ -139,43 +139,44 @@ This project is licensed under the MIT License.
 
 新草稿及导出文件使用 v2 页面结构。旧浏览器草稿和 v1 HTML 作品仍可读取，并自动恢复为原来的五页顺序。
 
-### 临时部署到当前 Cloudflare 域名
+### 临时部署到当前 Cloudflare 域名（Workers KV 免费方案）
 
-顶部的「临时部署」会复用 HTML 导出功能，将当前作品和照片保存到 R2，生成例如 `https://你的域名/demo/9e489e3f1d384a16a56bc8c374caee38` 的公开链接。无需每次重新构建网站；每次部署生成独立快照和新链接，继续编辑不会修改已发布作品。链接默认 7 天有效，上传上限 20 MB（本地 HTML 导出仍为 100 MB）。部署口令只用于上传，不保存在浏览器草稿里，访客查看无需口令。
+顶部的「临时部署」复用 HTML 导出功能，将当前作品及照片存到 Workers KV，生成 `https://你的域名/demo/随机编号` 的公开链接。每次发布生成独立快照，无需重新构建网站。链接 7 天后自动过期并由 KV 删除，无需配置清理任务。上传上限 20 MB，本地导出仍支持 100 MB。新链接在其他地区可能需要约 60 秒同步；遇到暂时不存在的提示，请稍后重试。
 
-**首次配置（Pages / Workers 共用）：**
+**GitHub → Cloudflare Workers 部署：**
 
-1. 在 Cloudflare R2 创建私有桶，例如 `year-in-review-demos`，不要启用桶的公开访问。
-2. 将桶绑定到项目，绑定名必须为 `DEMOS`。
-3. 在项目设置中添加 Secret `DEPLOY_PASSWORD`，使用足够长的随机口令。口令只交给有权发布作品的人；不要设置为 `VITE_*` 环境变量。
-4. 在桶的 Object lifecycle rules 添加删除规则：前缀 `demos/`，上传 7 天后删除。后端会按保存的到期时间立即拒绝过期访问，生命周期负责后续实际清理；未配置规则时，文件会继续占用存储，但过期后不会展示。
-5. 更新部署项目后，点击「临时部署」，输入口令，点击「上传并生成链接」。页面会显示链接、复制按钮和到期时间。
+1. 将本次修改推送 GitHub。`wrangler.workers.jsonc` 已移除 R2 配置，使用 `kv_namespaces: [{ "binding": "DEMOS_KV" }]`。当前项目的 Wrangler 支持首次部署自动创建 KV，不需要开通 R2 订阅。
+2. Workers Builds 的构建命令保持 `npm run build`，部署命令保持 `npx wrangler deploy --config wrangler.workers.jsonc`，根目录为仓库根目录。Worker 名称必须与配置中的 `name` 一致，当前为 `year-in-review`。
+3. 首次部署会创建 KV 命名空间并绑定为 `DEMOS_KV`；以后复用已有绑定。GitHub 构建不会把生成的命名空间 ID 自动提交回仓库。建议部署成功后从控制台复制 ID，固定到配置中：
 
-**不知道当前是哪种部署：** 在 Cloudflare 的 Workers & Pages 列表里查看项目类型；默认域名以 `.pages.dev` 结尾的是 Pages，以 `.workers.dev` 结尾的是 Workers（自定义域名需要在控制台确认）。选择下面对应的一种方式即可。
+   ```json
+   "kv_namespaces": [
+     { "binding": "DEMOS_KV", "id": "控制台中的实际命名空间ID" }
+   ]
+   ```
+
+4. Worker → Settings → Variables and Secrets，添加类型为 **Secret** 的 `DEPLOY_PASSWORD`，保存并部署。使用较长随机口令，只交给有权发布的人；不要写入 GitHub、`VITE_*` 变量或 Builds 构建变量。已有这个 Secret 时继续沿用。
+5. 打开网站，点击「临时部署」，输入口令并上传。页面显示链接、复制按钮和到期时间。口令不会存入浏览器草稿，访客无需口令即可查看作品。
+
+如果构建提示没有创建 KV 的权限，可以在 Cloudflare 控制台的 Workers KV 中手动创建命名空间（例如 `year-in-review-demos`），把实际 ID 按上述格式写入配置，推送后重新部署。构建使用的 API Token 需要具有对应账户的 Workers KV Storage 编辑权限。`DEMOS_KV` 是代码使用的绑定名，不能改为命名空间名称。
+
+若曾成功部署过旧 R2 版本，旧作品不会自动搬迁到 KV，需要在编辑器重新发布。本次代码不会删除旧桶或桶内文件。
 
 **Cloudflare Pages：**
 
-- 已提供 `functions/api/demos.js`、`functions/demo/[id].js` 和 `public/_routes.json`。
-- 在 Pages 项目设置添加上述 R2 绑定与 Secret，生产/预览环境按需分别配置。Git 构建命令仍为 `npm run build`，输出目录仍为 `dist`，项目根目录必须包含 `functions`。
-- 使用 Git 集成部署，或在项目根目录执行 `npx wrangler pages deploy dist --project-name 你的现有Pages项目名`。控制台拖拽上传 `dist` 不会编译这里的 Functions。
+Pages Functions 也共用 KV 后端。在 Pages 项目设置添加 KV 绑定 `DEMOS_KV` 和运行时 Secret `DEPLOY_PASSWORD`，生产/预览环境按需分别配置。Git 构建命令为 `npm run build`，输出目录为 `dist`，项目根目录需包含 `functions`。也可在根目录执行 `npx wrangler pages deploy dist --project-name 你的现有Pages项目名`；控制台拖拽上传 `dist` 不会编译 Functions。
 
-**Cloudflare Workers（静态资源）：**
+**本地联调（不访问线上 KV）：**
 
-- 已提供 `server/worker.js` 和 `wrangler.workers.jsonc`。
-- 将配置中的 `name` 改成现有 Worker 名称，`bucket_name` 改成实际 R2 桶名；保留现有项目需要的其他配置。
-- 构建命令：`npm run build`；部署命令：`npx wrangler deploy --config wrangler.workers.jsonc`。
-- 在 Worker 设置添加 Secret，或执行 `npx wrangler secret put DEPLOY_PASSWORD --config wrangler.workers.jsonc`。不要把口令写进配置文件。
-- `run_worker_first` 让 `/api/*` 和 `/demo/*` 请求进入后端，其余路径继续提供编辑器静态资源。
+在项目根目录创建被 Git 忽略的 `.dev.vars`，写入 `DEPLOY_PASSWORD=你自己的本地测试口令`，执行 `npm run build`，再选择：
 
-**本地联调（不会使用线上 R2）：**
-
-在项目根目录创建被 Git 忽略的 `.dev.vars`，写入 `DEPLOY_PASSWORD=你自己的本地测试口令`，先执行 `npm run build`。然后选择：
-
-- Pages：`npx wrangler pages dev dist --r2 DEMOS`
 - Workers：`npx wrangler dev --config wrangler.workers.jsonc`
+- Pages：`npx wrangler pages dev dist --kv DEMOS_KV`
 
-打开命令输出的本地地址测试部署和访问。单独 `npm run dev` 仅启动前端，不提供部署接口。
+打开命令输出的本地地址测试上传和访问。单独 `npm run dev` 只启动前端，不提供部署接口。
 
-临时部署会将作品内容上传到服务器，持有链接的人可查看和保存全部内容；普通编辑、导入、导出仍在本地执行。作品响应使用 `no-store`、不索引提示和 CSP sandbox，保留翻页脚本但隔离编辑器的 localStorage/cookie。请不要为 `/demo/*` 配置覆盖 `no-store` 的强制缓存规则。R2 及动态请求用量按 Cloudflare 账户规则计费。
+Workers Free 包含 KV 免费额度：总存储 1 GB、每天 1,000 次写入和 100,000 次读取。免费计划超过限额会导致相关操作失败，不会自动升级付费。临时作品及照片会占用这些额度；高流量访问还受 Workers 自身额度限制。KV 单值上限 25 MiB，本项目保留 20 MB 上传限制。
 
-官方参考：[Pages R2 绑定](https://developers.cloudflare.com/pages/functions/bindings/)、[Workers 静态资源路由](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)、[R2 生命周期](https://developers.cloudflare.com/r2/buckets/object-lifecycles/)、[Pages Functions 部署限制](https://developers.cloudflare.com/pages/get-started/direct-upload/)。
+普通编辑、导入、导出仍在本地执行。临时部署会上传全部作品内容，持有链接的人可以查看和保存。作品响应保留 `no-store`、不索引提示和 CSP sandbox，翻页脚本可以运行，但不能读取编辑器的 localStorage/cookie；后端同时检查到期时间，避免缓存内容在过期后继续展示。不要为 `/demo/*` 设置覆盖 `no-store` 的强制缓存规则。
+
+官方参考：[KV 免费额度](https://developers.cloudflare.com/kv/platform/pricing/)、[KV 写入与自动过期](https://developers.cloudflare.com/kv/api/write-key-value-pairs/)、[Wrangler 自动创建资源](https://developers.cloudflare.com/workers/wrangler/configuration/#automatic-provisioning)、[Pages KV 绑定](https://developers.cloudflare.com/pages/functions/bindings/)。
