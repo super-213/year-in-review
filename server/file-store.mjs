@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile, rename, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { splitSnapshotImages } from './snapshot-images.mjs';
 
 const idPattern = /^[a-f0-9]{32}$/;
 
@@ -22,13 +23,45 @@ export class FileDemoStore {
     const pending = join(this.directory, `.pending-${randomUUID()}`);
     await mkdir(pending);
     try {
-      await writeFile(join(pending, 'index.html'), html, 'utf8');
+      const snapshot = splitSnapshotImages(html, id);
+      await mkdir(join(pending, 'assets'));
+      for (const [name, bytes] of snapshot.assets) await writeFile(join(pending, 'assets', name), bytes);
+      await writeFile(join(pending, 'index.html'), snapshot.html, 'utf8');
       await writeFile(join(pending, 'metadata.json'), JSON.stringify({ expiration, ...metadata }), 'utf8');
       // A completed snapshot becomes visible only after both files are ready.
       await rename(pending, join(this.directory, id));
     } finally {
       await rm(pending, { recursive: true, force: true });
     }
+  }
+
+  async readResource(id, name) {
+    if (!idPattern.test(id) || !(name === 'source.html' || /^[a-f0-9]{64}\.(png|jpg|gif|webp|avif|bmp)$/.test(name))) return null;
+    const directory = join(this.directory, id);
+    try {
+      const metadata = JSON.parse(await readFile(join(directory, 'metadata.json'), 'utf8'));
+      const expiry = Date.parse(metadata.expiresAt);
+      if (!Number.isFinite(metadata.expiration) || metadata.expiration * 1000 <= Date.now() || !Number.isFinite(expiry) || expiry <= Date.now()) return null;
+      const file = join(directory, ...(name === 'source.html' ? ['index.html'] : ['assets', name]));
+      return { file, metadata };
+    } catch (error) {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    }
+  }
+
+  async portableHtml(resource, id) {
+    let html = await readFile(resource.file, 'utf8');
+    let names;
+    try { names = await readdir(join(this.directory, id, 'assets')); }
+    catch (error) { if (error.code === 'ENOENT') return html; throw error; }
+    for (const name of names) {
+      if (!/^[a-f0-9]{64}\.(png|jpg|gif|webp|avif|bmp)$/.test(name)) continue;
+      const bytes = await readFile(join(this.directory, id, 'assets', name));
+      const type = name.split('.').pop().replace('jpg', 'jpeg');
+      html = html.split(`/demo/${id}/assets/${name}`).join(`data:image/${type};base64,${bytes.toString('base64')}`);
+    }
+    return html;
   }
 
   async getWithMetadata(key) {

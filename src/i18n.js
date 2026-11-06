@@ -1,4 +1,9 @@
 export const MESSAGES = {
+  "正在处理图片…": {
+    "zh": "正在处理图片…",
+    "en": "Optimizing image…",
+    "id": "Mengoptimalkan gambar…"
+  },
   "新链接在其他地区可能需要约 60 秒同步，请稍后重试。": {
     "zh": "新链接在其他地区可能需要约 60 秒同步，请稍后重试。",
     "en": "New links may take about 60 seconds to sync to other regions. Please try again shortly.",

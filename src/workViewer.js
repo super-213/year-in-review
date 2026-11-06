@@ -2,7 +2,7 @@
 export const viewerStyles = `
 html,body{width:100%;height:100%;margin:0;overflow:hidden}
 html{font-size:clamp(14px,4.5vw,20px)}
-body{background:#0f172a;font-family:Inter,sans-serif}
+body{background:#0f172a;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
 .work-viewer,.work-frame{position:relative;width:100%;max-width:none;height:100%;height:100dvh;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:hidden}
 .work-frame{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:auto}
 .work-frame::-webkit-scrollbar{display:none}
@@ -48,9 +48,23 @@ export const viewerScript = `(()=>{
  const slides=[...document.querySelectorAll('.work-slide')];
  const progress=[...document.querySelectorAll('.work-progress span')];
  let current=0;
+ let last=-1;
+ const assets=JSON.parse(document.getElementById('year-in-review-work')?.textContent||'{}').assets||{};
+ const loadImages=()=>{
+   slides.forEach((slide,i)=>{
+     if(Math.abs(i-current)>1)return;
+     slide.querySelectorAll('img[data-work-image]').forEach(img=>{
+       if(!img.hasAttribute('src')&&assets[img.dataset.workImage]){
+         img.decoding='async';img.src=assets[img.dataset.workImage];
+       }
+     });
+   });
+ };
  const update=()=>{
    if(!frame.clientWidth)return;
    current=Math.max(0,Math.min(slides.length-1,Math.round(frame.scrollLeft/frame.clientWidth)));
+   if(current===last)return;
+   last=current;loadImages();
    document.getElementById('page').textContent=(current+1)+' / '+slides.length;
    progress.forEach((bar,i)=>bar.dataset.active=String(i<=current));
  };

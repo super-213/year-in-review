@@ -2,6 +2,7 @@ import { translate } from './i18n.js';
 import { validateChart } from './charts.js';
 import { PAGE_TYPES, PAGE_FIELDS, pageData } from './pages.js';
 import { viewerStyles, viewerScript } from './workViewer.js';
+import { optimizeImage } from './imageOptimizer.js';
 
 export const WORK_FORMAT = 'year-in-review';
 export const THEME_IDS = ['retro', 'swiss', 'lofi', 'neon', 'minimal', 'journal', 'glass', 'brutal', 'vapor', 'academia', 'pop', 'blueprint'];
@@ -64,26 +65,38 @@ export function parseWorkHtml(source) {
   // No DOM parsing: even resource elements in untrusted files must stay inert.
   const match = source.match(/<script type="application\/json" id="year-in-review-work">([\s\S]*?)<\/script>/);
   if (!match) throw new Error('请选择由本编辑器导出的 HTML 作品文件。');
-  return validateWork(JSON.parse(match[1]));
+  const packed = JSON.parse(match[1]);
+  return validateWork(JSON.parse(JSON.stringify(packed), (key, value) => {
+    if (['url', 'image'].includes(key) && typeof value === 'string' && /^work-image:\d+$/.test(value)) {
+      const image = packed.assets?.[value.slice(11)];
+      if (typeof image !== 'string' || !image.startsWith('data:') || !isImageUrl(image)) throw new Error('作品文件格式不正确，或版本暂不支持。');
+      return image;
+    }
+    return value;
+  }));
 }
 
 export const serializeWork = work => JSON.stringify(work).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 export async function embedPhotos(work) {
+  const cache = new Map();
   const embedPhoto = async photo => {
-    if (photo.url.startsWith('data:')) return photo;
     try {
-      const response = await fetch(photo.url, { signal: AbortSignal.timeout(30000), credentials: 'omit' });
-      if (!response.ok) throw new Error('HTTP error');
-      const blob = await response.blob();
-      if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/i.test(blob.type)) throw new Error('Unsupported image');
-      const url = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      return { ...photo, url };
+      if (!cache.has(photo.url)) cache.set(photo.url, (async () => {
+        if (photo.url.startsWith('data:') && typeof document === 'undefined') return photo.url;
+        const response = await fetch(photo.url, { signal: AbortSignal.timeout(30000), credentials: 'omit' });
+        if (!response.ok) throw new Error('HTTP error');
+        const blob = await response.blob();
+        if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/i.test(blob.type)) throw new Error('Unsupported image');
+        if (typeof document !== 'undefined') return optimizeImage(blob);
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      })());
+      return { ...photo, url: await cache.get(photo.url) };
     } catch {
       throw new Error(translate(work.language, '无法打包照片「{caption}」。请将该照片上传为本地图片后重新导出。', { caption: photo.caption }));
     }
@@ -109,24 +122,35 @@ export async function embedPhotos(work) {
 }
 
 export function createWorkHtml(work, slides, css) {
+  const images = new Map();
+  const packed = JSON.parse(JSON.stringify(work, (key, value) => {
+    if (['url', 'image'].includes(key) && typeof value === 'string' && value.startsWith('data:image/')) {
+      if (!images.has(value)) images.set(value, String(images.size));
+      return `work-image:${images.get(value)}`;
+    }
+    return value;
+  }));
+  packed.assets = Object.fromEntries([...images].map(([url, id]) => [id, url]));
   const title = `${work.data.year} · ${work.data.title}`.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const renderedSlides = slides.map((slide, i) => {
     const page = work.pages?.[i];
     const data = pageData(work.data, page || { content: {} });
     const type = page?.type || PAGE_TYPES[i];
     const layout = `--stat-columns:${data.stats.length <= 4 ? 2 : 3};--photo-columns:${Math.min(data.photos.length, 3)};--photo-rows:${Math.ceil(data.photos.length / 3)}`;
-    return `<section class="work-slide" aria-label="${i + 1} / ${slides.length}" data-slide="${i}" data-page-type="${type}" style="${layout}">${slide}</section>`;
+    const optimizedSlide = slide
+      .replace(/<link\b(?=[^>]*\brel="preload")(?=[^>]*\bas="image")[^>]*>/g, '')
+      .replace(/\bsrc="([^"]*)"/g, (attribute, url) => images.has(url) ? `data-work-image="${images.get(url)}" decoding="async"` : attribute);
+    return `<section class="work-slide" aria-label="${i + 1} / ${slides.length}" data-slide="${i}" data-page-type="${type}" style="${layout}">${optimizedSlide}</section>`;
   }).join('');
   return `<!doctype html>
 <html lang="${work.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${title}</title>
-<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Merriweather:ital,wght@0,300;0,700;1,300&amp;family=Patrick+Hand&amp;family=Space+Mono:wght@400;700&amp;display=swap">
 <style>${css.replace(/<\/style/gi, '<\\/style')}
 ${viewerStyles}
 </style></head><body>
 <main class="work-viewer" aria-label="${title}" style="--stat-columns:${(work.data.stats.length <= 4 ? 2 : 3)};--photo-columns:${Math.min(work.data.photos.length, 3)};--photo-rows:${Math.ceil(work.data.photos.length / 3)}"><div class="work-frame">${renderedSlides}</div>
 <div class="work-progress" aria-hidden="true">${slides.map((_, i) => `<span data-active="${i === 0}"></span>`).join('')}</div>
 <nav class="work-nav" aria-label="${translate(work.language, '页面')}"><button id="previous" aria-label="${translate(work.language, '上一页')}">←</button><span id="page" aria-live="polite">1 / ${slides.length}</span><button id="next" aria-label="${translate(work.language, '下一页')}">→</button></nav></main>
-<script type="application/json" id="year-in-review-work">${serializeWork(work)}</script>
+<script type="application/json" id="year-in-review-work">${serializeWork(packed)}</script>
 <script>${viewerScript}</script>
 </body></html>`;
 }

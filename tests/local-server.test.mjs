@@ -6,6 +6,9 @@ import { join } from 'node:path';
 import { once } from 'node:events';
 import { createLocalServer } from '../server/local.mjs';
 import { MAX_DEMO_BYTES } from '../server/demos.js';
+import { TEMPLATES } from '../src/locales.js';
+import { createWorkHtml, parseWorkHtml } from '../src/workFile.js';
+import { imageDimensions } from '../src/imageOptimizer.js';
 
 const html = '<!doctype html><script id="year-in-review-work" type="application/json">{}</script><h1>本地作品</h1>';
 
@@ -16,6 +19,8 @@ async function fixture(t) {
   await mkdir(distDirectory);
   await writeFile(join(distDirectory, 'index.html'), '<h1>editor</h1>');
   await writeFile(join(distDirectory, 'app.js'), 'console.log("editor")');
+  await mkdir(join(distDirectory, 'assets'));
+  await writeFile(join(distDirectory, 'assets', 'app-abcdefgh.js'), 'const sample = "compressible content";\n'.repeat(1000));
   const servers = [];
   t.after(async () => {
     for (const server of servers) {
@@ -101,4 +106,56 @@ test('chunked uploads without Content-Length still enforce the size limit and re
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /20 MB/);
   assert.deepEqual(await readdir(dataDirectory), []);
+});
+
+test('local snapshots extract shared images once, cache only until expiry, and offer portable downloads', async t => {
+  const { url, dataDirectory } = await fixture(t);
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=';
+  const data = structuredClone(TEMPLATES.en);
+  data.photos.forEach(photo => { photo.url = image; });
+  const work = { format: 'year-in-review', version: 1, theme: 'retro', language: 'en', data };
+  const portable = createWorkHtml(work, [`<div><img src="${image}"><img src="${image}"></div>`], '');
+  const published = await (await publish(url, portable)).json();
+  const page = await (await fetch(`${url}${published.path}`)).text();
+  assert.doesNotMatch(page, /data:image/);
+  const [name] = await readdir(join(dataDirectory, published.id, 'assets'));
+  assert.equal((await readdir(join(dataDirectory, published.id, 'assets'))).length, 1);
+  const assetUrl = `${url}${published.path}/assets/${name}`;
+  const asset = await fetch(assetUrl);
+  assert.equal(asset.status, 200);
+  assert.equal(asset.headers.get('Content-Type'), 'image/png');
+  assert.match(asset.headers.get('Cache-Control'), /max-age=86400/);
+  assert.deepEqual(Buffer.from(await asset.arrayBuffer()), Buffer.from(image.split(',')[1], 'base64'));
+  assert.equal((await fetch(assetUrl, { headers: { 'If-None-Match': asset.headers.get('ETag') } })).status, 304);
+  const download = await fetch(`${url}${published.path}/download`);
+  assert.match(download.headers.get('Content-Disposition'), /attachment/);
+  assert.deepEqual(parseWorkHtml(await download.text()), work);
+  assert.equal((await fetch(`${url}${published.path}/assets/${'a'.repeat(64)}.png`)).status, 404);
+  await writeFile(join(dataDirectory, published.id, 'metadata.json'), JSON.stringify({ expiration: 1, expiresAt: new Date(1000).toISOString() }));
+  assert.equal((await fetch(assetUrl, { headers: { 'If-None-Match': asset.headers.get('ETag') } })).status, 404);
+  assert.equal((await fetch(`${url}${published.path}/download`)).status, 404);
+});
+
+test('local server compresses text, honors encoding preferences and validates immutable static files', async t => {
+  const { url } = await fixture(t);
+  const path = `${url}/assets/app-abcdefgh.js`;
+  const response = await fetch(path, { headers: { 'Accept-Encoding': 'br, gzip' } });
+  assert.equal(response.headers.get('Content-Encoding'), 'br');
+  assert.match(response.headers.get('Cache-Control'), /31536000, immutable/);
+  assert.equal(response.headers.get('Vary'), 'Accept-Encoding');
+  assert.match(await response.text(), /compressible content/);
+  const gzip = await fetch(path, { headers: { 'Accept-Encoding': 'br;q=0, gzip;q=1' } });
+  assert.equal(gzip.headers.get('Content-Encoding'), 'gzip');
+  assert.match(await gzip.text(), /compressible content/);
+  const raw = await fetch(path, { headers: { 'Accept-Encoding': 'br;q=0, gzip;q=0' } });
+  assert.equal(raw.headers.get('Content-Encoding'), null);
+  const cached = await fetch(path, { headers: { 'If-None-Match': response.headers.get('ETag') } });
+  assert.equal(cached.status, 304);
+  assert.equal((await fetch(url)).headers.get('Cache-Control'), 'no-cache');
+});
+
+test('image resizing limits portrait and landscape resolution without upscaling', () => {
+  assert.deepEqual(imageDimensions(4000, 3000), { width: 1600, height: 1200 });
+  assert.deepEqual(imageDimensions(3000, 4000), { width: 1200, height: 1600 });
+  assert.deepEqual(imageDimensions(800, 600), { width: 800, height: 600 });
 });

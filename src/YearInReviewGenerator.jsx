@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageData, movePage } from './pages.js';
 import exportStyles from './index.css?inline';
 import { WORK_FORMAT, validateWork, parseWorkHtml, embedPhotos, createWorkHtml } from './workFile';
+import { optimizeImage } from './imageOptimizer.js';
 import { 
   ChevronLeft, ChevronRight, Coffee, Book, Activity, Zap, Heart, Briefcase, 
   Music, Globe, Terminal, Feather, Smartphone, RefreshCw, Layout, Type, 
@@ -137,7 +138,7 @@ const generateSmartSummary = (data, lang) => {
 
 // Shared by all twelve themes and by the standalone HTML export.
 const HighlightIcon = ({ item, fallback }) => item.image ? (
-  <img src={item.image} alt={item.title || 'Memory'} className="inline-block object-contain align-middle" style={{ width: '1.6em', height: '1.6em', maxWidth: '100%', maxHeight: '100%' }} />
+  <img loading="lazy" decoding="async" src={item.image} alt={item.title || 'Memory'} className="inline-block object-contain align-middle" style={{ width: '1.6em', height: '1.6em', maxWidth: '100%', maxHeight: '100%' }} />
 ) : (item.emoji || fallback || '✨');
 
 // --- 1. Retro ---
@@ -205,7 +206,7 @@ const RenderRetro = ({ slide, data, t }) => {
          <div className={`grid gap-2 flex-1 w-full min-h-0 ${gridClass}`}>
             {data.photos.map((photo, i) => (
               <div key={photo.id} className={`${borderStyle} p-1 overflow-hidden relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                 <img src={photo.url} alt="" className={`w-full h-full object-cover filter grayscale contrast-125`} />
+                 <img loading="lazy" decoding="async" src={photo.url} alt="" className={`w-full h-full object-cover filter grayscale contrast-125`} />
                  <div className={`absolute bottom-1 right-1 bg-emerald-900 text-white text-[8px] px-1`}>IMG_0{i+1}.JPG</div>
               </div>
             ))}
@@ -289,7 +290,7 @@ if (slide === 2) return (
          <div className={`grid gap-0 h-full w-full ${gridClass}`}>
            {data.photos.map((photo, i) => (
              <div key={photo.id} className={`overflow-hidden border border-black relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                <img src={photo.url} alt="" className={`w-full h-full object-cover filter grayscale contrast-125 hover:grayscale-0 transition-all duration-500 opacity-90`} />
+                <img loading="lazy" decoding="async" src={photo.url} alt="" className={`w-full h-full object-cover filter grayscale contrast-125 hover:grayscale-0 transition-all duration-500 opacity-90`} />
              </div>
            ))}
          </div>
@@ -369,7 +370,7 @@ const RenderLoFi = ({ slide, data, t }) => {
              <div className={`grid gap-4 flex-1 w-full min-h-0 ${gridClass}`}>
                 {data.photos.map((photo,i) => (
                     <div key={photo.id} className={`bg-white p-2 shadow-md border border-stone-200 relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                        <div className="w-full h-full bg-stone-100 overflow-hidden filter sepia-[.2]"><img src={photo.url} className="w-full h-full object-cover"/></div>
+                        <div className="w-full h-full bg-stone-100 overflow-hidden filter sepia-[.2]"><img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover"/></div>
                     </div>
                 ))}
              </div>
@@ -443,7 +444,7 @@ const RenderNeon = ({ slide, data, t }) => {
                 <div className={`grid gap-2 flex-1 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo,i) => (
                         <div key={photo.id} className={`relative rounded-xl overflow-hidden border border-cyan-500/50 ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover"/>
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover"/>
                         </div>
                     ))}
                 </div>
@@ -508,7 +509,7 @@ const RenderMinimal = ({ slide, data, t }) => {
                 <div className={`grid gap-2 flex-1 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo,i) => (
                         <div key={photo.id} className={`bg-stone-200 overflow-hidden ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover opacity-90"/>
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover opacity-90"/>
                         </div>
                     ))}
                 </div>
@@ -595,7 +596,7 @@ const RenderJournal = ({ slide, data, t }) => {
             {data.photos.map((photo, i) => (
                 <div key={photo.id} className={`bg-white p-2 shadow-md border border-stone-200 relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
                     <div className="aspect-square bg-stone-100 overflow-hidden filter sepia-[.2] h-full w-full">
-                        <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                        <img loading="lazy" decoding="async" src={photo.url} alt="" className="w-full h-full object-cover" />
                     </div>
                 </div>
             ))}
@@ -663,7 +664,7 @@ const RenderGlass = ({ slide, data, t }) => {
                 <div className={`grid gap-3 flex-1 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`${cardStyle} p-1 overflow-hidden relative rounded-xl ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover rounded-lg" />
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover rounded-lg" />
                         </div>
                     ))}
                 </div>
@@ -741,7 +742,7 @@ const RenderBrutal = ({ slide, data, t }) => {
                 <div className={`grid gap-4 h-full pb-8 w-full min-h-0 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`${cardStyle} p-0 overflow-hidden relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover grayscale contrast-125 hover:grayscale-0 transition-all" />
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover grayscale contrast-125 hover:grayscale-0 transition-all" />
                         </div>
                     ))}
                 </div>
@@ -819,7 +820,7 @@ const RenderVapor = ({ slide, data, t }) => {
                 <div className={`grid gap-3 flex-1 w-full min-h-0 relative z-10 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`relative border-2 ${i % 2 === 0 ? 'border-pink-500 shadow-[4px_4px_0px_cyan]' : 'border-cyan-500 shadow-[-4px_4px_0px_magenta]'} p-1 overflow-hidden h-full ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className={`w-full h-full object-cover filter ${i % 2 === 0 ? 'hue-rotate-15' : 'sepia'} contrast-125`} />
+                            <img loading="lazy" decoding="async" src={photo.url} className={`w-full h-full object-cover filter ${i % 2 === 0 ? 'hue-rotate-15' : 'sepia'} contrast-125`} />
                         </div>
                     ))}
                 </div>
@@ -884,7 +885,7 @@ const RenderAcademia = ({ slide, data, t }) => {
                 <div className={`grid gap-4 flex-1 h-full min-h-0 pb-8 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`border-[4px] border-[#e0d8c3] shadow-xl overflow-hidden relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover sepia-[.6] contrast-125 absolute inset-0" />
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover sepia-[.6] contrast-125 absolute inset-0" />
                         </div>
                     ))}
                 </div>
@@ -952,7 +953,7 @@ const RenderPop = ({ slide, data, t }) => {
                 <div className={`grid gap-4 relative z-10 flex-1 min-h-0 ${gridClass}`}>
                     {data.photos.map((photo, i) => (
                         <div key={photo.id} className={`bg-white border-4 border-black p-2 shadow-[4px_4px_0px_black] overflow-hidden relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                            <img src={photo.url} className="w-full h-full object-cover grayscale contrast-125 absolute inset-0 m-2" style={{width: 'calc(100% - 16px)', height: 'calc(100% - 16px)'}} />
+                            <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover grayscale contrast-125 absolute inset-0 m-2" style={{width: 'calc(100% - 16px)', height: 'calc(100% - 16px)'}} />
                         </div>
                     ))}
                 </div>
@@ -1026,7 +1027,7 @@ const RenderBlueprint = ({ slide, data, t }) => {
                     <div className={`grid gap-4 mt-8 flex-1 min-h-0 pb-2 ${gridClass}`}>
                         {data.photos.map((photo, i) => (
                             <div key={photo.id} className={`border border-white overflow-hidden relative ${data.photos.length >= 3 && data.photos.length % 2 !== 0 && i === 0 ? 'row-span-2' : ''}`}>
-                                <img src={photo.url} className="w-full h-full object-cover opacity-50 grayscale" />
+                                <img loading="lazy" decoding="async" src={photo.url} className="w-full h-full object-cover opacity-50 grayscale" />
                                 <div className="absolute top-0 left-0 bg-white text-[#003399] text-[8px] px-1">IMG_{i+1}</div>
                             </div>
                         ))}
@@ -1109,6 +1110,7 @@ export default function YearInReviewGenerator() {
   const [highlightImageError, setHighlightImageError] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [processingImages, setProcessingImages] = useState(0);
   const [showDeploy, setShowDeploy] = useState(false);
   const [deployPassword, setDeployPassword] = useState('');
   const [deploymentConfig, setDeploymentConfig] = useState(null);
@@ -1265,6 +1267,7 @@ export default function YearInReviewGenerator() {
 
   const deployWork = async (event) => {
     event.preventDefault();
+    if (processingImages) return;
     setIsDeploying(true);
     setFileStatus('正在上传临时作品…');
     try {
@@ -1299,6 +1302,7 @@ export default function YearInReviewGenerator() {
   };
 
   const exportWork = async () => {
+    if (processingImages) return;
     setIsExporting(true);
     setFileStatus('正在打包作品和照片…');
     try {
@@ -1362,7 +1366,7 @@ export default function YearInReviewGenerator() {
     if (data.highlights.length > 2) setData(prev => ({ ...prev, highlights: prev.highlights.filter(h => h.id !== id) }));
   };
 
-  const handleHighlightImageUpload = (id, event) => {
+  const handleHighlightImageUpload = async (id, event) => {
     const file = event.target.files[0];
     event.target.value = '';
     if (!file) return;
@@ -1371,20 +1375,22 @@ export default function YearInReviewGenerator() {
       setHighlightImageError({ id, pageId: activePage.id, message: '请选择不超过 10 MB 的 PNG、JPEG、GIF、WebP、AVIF 或 BMP 图片。' });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => handleHighlightChange(id, 'image', reader.result);
-    reader.onerror = () => setHighlightImageError({ id, pageId: activePage.id, message: '图片读取失败，请重新选择。' });
-    reader.readAsDataURL(file);
+    setProcessingImages(count => count + 1);
+    try { handleHighlightChange(id, 'image', await optimizeImage(file)); }
+    catch { setHighlightImageError({ id, pageId: activePage.id, message: '图片读取失败，请重新选择。' }); }
+    finally { setProcessingImages(count => count - 1); }
   };
 
-  const handlePhotoUpload = (id, e) => {
+  const handlePhotoUpload = async (id, e) => {
     const file = e.target.files[0];
+    e.target.value = '';
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setData(prev => ({ ...prev, photos: prev.photos.map(p => p.id === id ? { ...p, url: reader.result } : p) }));
-      };
-      reader.readAsDataURL(file);
+      setProcessingImages(count => count + 1);
+      try {
+        const url = await optimizeImage(file);
+        setData(prev => ({ ...prev, photos: prev.photos.map(p => p.id === id ? { ...p, url } : p) }));
+      } catch (error) { setFileStatus(error.message); }
+      finally { setProcessingImages(count => count - 1); }
     }
   };
 
@@ -1596,13 +1602,13 @@ export default function YearInReviewGenerator() {
 
           <section className="mb-8 border-b border-slate-200 pb-6" aria-label={tr('作品文件')}>
             <div className="flex flex-wrap gap-3">
-              <button onClick={exportWork} disabled={isExporting || isDeploying} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
+              <button onClick={exportWork} disabled={isExporting || isDeploying || processingImages > 0} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
                 <Save className="w-4 h-4" />{isExporting ? tr('正在导出…') : tr('导出可部署 HTML')}
               </button>
-              <button onClick={() => importRef.current.click()} disabled={isExporting || isDeploying} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
+              <button onClick={() => importRef.current.click()} disabled={isExporting || isDeploying || processingImages > 0} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold hover:bg-slate-50 disabled:opacity-50">
                 <Upload className="w-4 h-4" />{tr('导入作品')}
               </button>
-              <button type="button" onClick={() => setShowDeploy(value => !value)} disabled={isExporting || isDeploying} aria-expanded={showDeploy} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-indigo-700 text-sm font-bold hover:bg-indigo-50 disabled:opacity-50">
+              <button type="button" onClick={() => setShowDeploy(value => !value)} disabled={isExporting || isDeploying || processingImages > 0} aria-expanded={showDeploy} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-indigo-700 text-sm font-bold hover:bg-indigo-50 disabled:opacity-50">
                 <Globe className="w-4 h-4" />{isDeploying ? tr('正在部署…') : tr('临时部署')}
               </button>
               <input ref={importRef} type="file" accept=".html,text/html" onChange={importWork} className="hidden" aria-label={tr('选择 HTML 作品')} />
@@ -1614,7 +1620,7 @@ export default function YearInReviewGenerator() {
                   {tr('部署口令')}
                   <input type="password" value={deployPassword} onChange={event => setDeployPassword(event.target.value)} required disabled={isDeploying} autoComplete="off" className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-normal" />
                 </label>}
-                <button type="submit" disabled={isDeploying || !deploymentConfig || (deploymentConfig.requiresPassword && !deployPassword.trim())} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{tr(isDeploying ? '正在部署…' : '上传并生成链接')}</button>
+                <button type="submit" disabled={isDeploying || processingImages > 0 || !deploymentConfig || (deploymentConfig.requiresPassword && !deployPassword.trim())} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{tr(isDeploying ? '正在部署…' : '上传并生成链接')}</button>
               </form>
             )}
             {deployment && (
@@ -1624,10 +1630,12 @@ export default function YearInReviewGenerator() {
                 <p className="text-xs text-slate-500">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
                 <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {deploymentConfig?.storage !== 'local' && tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
                 <button type="button" onClick={copyDeployment} className="font-bold text-indigo-700 underline">{tr('复制链接')}</button>
+                {deploymentConfig?.storage === 'local' && <a href={`${deployment.url}/download`} className="ml-4 font-bold text-indigo-700 underline">{tr('导出可部署 HTML')}</a>}
               </div>
             )}
             <p className="mt-3 text-xs leading-relaxed text-slate-500">{tr('导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。')}</p>
             <p className="mt-2 text-xs text-slate-500" role="status">{tr(saveStatus)}</p>
+            {processingImages > 0 && <p className="mt-2 text-sm text-indigo-700" role="status">{tr('正在处理图片…')}</p>}
             <p className="mt-2 text-sm text-indigo-700" role="status">{typeof fileStatus === 'string' ? tr(fileStatus) : tr(fileStatus.key, { error: tr(fileStatus.error) })}</p>
           </section>
            
@@ -1719,7 +1727,7 @@ export default function YearInReviewGenerator() {
                    {/* Emoji & Title Row */}
                    <div className="flex gap-2 mb-2 items-start">
                      <div className="w-12 flex-shrink-0">
-                       {item.image ? <img src={item.image} alt={`${item.title} ${tr('图片')}`} className="w-12 h-12 rounded-lg object-contain bg-slate-50" /> : <input
+                       {item.image ? <img loading="lazy" decoding="async" src={item.image} alt={`${item.title} ${tr('图片')}`} className="w-12 h-12 rounded-lg object-contain bg-slate-50" /> : <input
                          type="text" 
                          value={item.emoji || ''} 
                          onChange={(e) => handleHighlightChange(item.id, 'emoji', e.target.value)} 
@@ -1748,7 +1756,7 @@ export default function YearInReviewGenerator() {
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <label className="relative cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800 rounded focus-within:ring-2 focus-within:ring-indigo-500 px-1 py-1">
                       <Upload className="w-3 h-3 inline-block mr-1" />{item.image ? tr('替换图片') : tr('上传图片')}
-                      <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" className="sr-only" aria-label={`${item.title} ${tr('上传图片')}`} onChange={event => handleHighlightImageUpload(item.id, event)} />
+                      <input disabled={processingImages > 0 || isExporting || isDeploying} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/bmp" className="sr-only" aria-label={`${item.title} ${tr('上传图片')}`} onChange={event => handleHighlightImageUpload(item.id, event)} />
                     </label>
                     {item.image && <button type="button" onClick={() => handleHighlightChange(item.id, 'image', '')} className="text-xs text-slate-500 hover:text-red-600">{tr('移除图片，恢复 Emoji')}</button>}
                     <span className="text-[10px] text-slate-400">{tr('支持 Emoji 或图片')}</span>
@@ -1790,12 +1798,12 @@ export default function YearInReviewGenerator() {
              <div className="grid grid-cols-3 gap-4 mb-4">
                 {data.photos.map((photo) => (
                    <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                      <img src={photo.url} alt="User Upload" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={photo.url} alt="User Upload" className="w-full h-full object-cover" />
                       <button onClick={(e) => { e.stopPropagation(); removePhoto(photo.id); }} disabled={data.photos.length <= 2} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full hover:bg-red-500 disabled:hidden transition-colors z-20"><Trash2 className="w-3 h-3" /></button>
                       <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity cursor-pointer text-white z-10">
                          <Upload className="w-6 h-6 mb-1" />
                          <span className="text-[10px] uppercase font-bold">{t.change}</span>
-                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(photo.id, e)} />
+                         <input disabled={processingImages > 0 || isExporting || isDeploying} type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(photo.id, e)} />
                       </label>
                    </div>
                 ))}

@@ -7,10 +7,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        handwriting: ['"Patrick Hand"', 'cursive'],
-        serif: ['"Merriweather"', 'serif'],
-        mono: ['"Space Mono"', 'monospace'],
-        sans: ['"Inter"', 'sans-serif'],
+        handwriting: ['"Comic Sans MS"', '"Kaiti SC"', 'KaiTi', 'cursive'],
+        serif: ['Georgia', '"Songti SC"', 'serif'],
+        mono: ['ui-monospace', '"SFMono-Regular"', 'Consolas', 'monospace'],
+        sans: ['system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
       }
     },
   },

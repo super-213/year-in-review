@@ -24,7 +24,7 @@ html, body, #root {
   padding: 0;
 }
 /* Shared geometry, with each template's own material and typography. */
-.chart-page { height:100%; display:flex; flex-direction:column; padding:24px; position:relative; overflow:hidden; background:var(--chart-bg); color:var(--chart-ink); font-family:Inter,sans-serif; }
+.chart-page { height:100%; display:flex; flex-direction:column; padding:24px; position:relative; overflow:hidden; background:var(--chart-bg); color:var(--chart-ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
 .chart-page header { position:relative; flex-shrink:0; }
 .chart-eyebrow { font-size:10px; letter-spacing:.16em; margin-bottom:12px; opacity:.7; }
 .chart-page h3 { font-size:28px; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
@@ -37,28 +37,28 @@ html, body, #root {
 .chart-legend strong { flex-shrink:0; font-variant-numeric:tabular-nums; }
 .chart-note { font-size:9px; margin-top:8px; opacity:.7; }
 .chart-page footer { text-align:center; font-size:6px; opacity:.4; padding-top:12px; }
-.chart-theme-retro { --chart-bg:#d1fae5; --chart-ink:#064e3b; font-family:'Space Mono',monospace; background-image:repeating-linear-gradient(0deg,transparent 0 3px,#064e3b0d 3px 4px); }
+.chart-theme-retro { --chart-bg:#d1fae5; --chart-ink:#064e3b; font-family:ui-monospace,Consolas,monospace; background-image:repeating-linear-gradient(0deg,transparent 0 3px,#064e3b0d 3px 4px); }
 .chart-theme-retro h3 { border:3px solid; box-shadow:5px 5px 0 #064e3b33; padding:8px; text-transform:uppercase; }
 .chart-theme-swiss { --chart-bg:#f2f2f2; --chart-ink:#171717; }
 .chart-theme-swiss h3 { border-bottom:5px solid #dc2626; padding-bottom:12px; font-size:36px; letter-spacing:-.06em; }
-.chart-theme-lofi { --chart-bg:#e7e5e4; --chart-ink:#57534e; font-family:Merriweather,serif; }
+.chart-theme-lofi { --chart-bg:#e7e5e4; --chart-ink:#57534e; font-family:Georgia,"Songti SC",serif; }
 .chart-theme-lofi header { background:#faf9f6; padding:12px; transform:rotate(-2deg); box-shadow:2px 4px 6px #0001; }
-.chart-theme-neon { --chart-bg:#09090b; --chart-ink:#f5d0fe; background-image:linear-gradient(#e879f90c 1px,transparent 1px),linear-gradient(90deg,#e879f90c 1px,transparent 1px); background-size:24px 24px; font-family:'Space Mono',monospace; }
+.chart-theme-neon { --chart-bg:#09090b; --chart-ink:#f5d0fe; background-image:linear-gradient(#e879f90c 1px,transparent 1px),linear-gradient(90deg,#e879f90c 1px,transparent 1px); background-size:24px 24px; font-family:ui-monospace,Consolas,monospace; }
 .chart-theme-neon h3 { color:#e879f9; text-shadow:0 0 12px #d946ef77; }
 .chart-theme-minimal { --chart-bg:#fafafa; --chart-ink:#0f172a; padding:30px; }
-.chart-theme-minimal h3 { font-family:Merriweather,serif; font-weight:400; letter-spacing:-.04em; }
-.chart-theme-journal { --chart-bg:#fffbeb; --chart-ink:#78350f; font-family:'Patrick Hand',cursive; background-image:repeating-linear-gradient(transparent 0 27px,#92400e18 27px 28px); }
+.chart-theme-minimal h3 { font-family:Georgia,"Songti SC",serif; font-weight:400; letter-spacing:-.04em; }
+.chart-theme-journal { --chart-bg:#fffbeb; --chart-ink:#78350f; font-family:"Comic Sans MS","Kaiti SC",cursive; background-image:repeating-linear-gradient(transparent 0 27px,#92400e18 27px 28px); }
 .chart-theme-journal h3 { border-bottom:2px dashed; padding-bottom:10px; font-size:34px; }
 .chart-theme-glass { --chart-bg:#6366f1; --chart-ink:#fff; background-image:radial-gradient(at 15% 20%,#e879f9,transparent 60%),radial-gradient(at 90% 90%,#22d3ee,transparent 65%); }
 .chart-theme-glass header { padding:14px; border:1px solid #ffffff55; border-radius:18px; background:#ffffff18; }
 .chart-theme-brutal { --chart-bg:#fff; --chart-ink:#000; }
 .chart-theme-brutal h3 { background:#facc15; padding:12px; border:3px solid; box-shadow:6px 6px 0 black; }
-.chart-theme-vapor { --chart-bg:#fce7f3; --chart-ink:#701a75; background-image:linear-gradient(#c084fc22 1px,transparent 1px),linear-gradient(90deg,#c084fc22 1px,transparent 1px); background-size:22px 22px; font-family:'Space Mono',monospace; }
+.chart-theme-vapor { --chart-bg:#fce7f3; --chart-ink:#701a75; background-image:linear-gradient(#c084fc22 1px,transparent 1px),linear-gradient(90deg,#c084fc22 1px,transparent 1px); background-size:22px 22px; font-family:ui-monospace,Consolas,monospace; }
 .chart-theme-vapor h3 { color:#c026d3; text-shadow:3px 3px #67e8f9; font-style:italic; }
-.chart-theme-academia { --chart-bg:#292524; --chart-ink:#d6c6ad; font-family:Merriweather,serif; border:8px double #78634d; }
+.chart-theme-academia { --chart-bg:#292524; --chart-ink:#d6c6ad; font-family:Georgia,"Songti SC",serif; border:8px double #78634d; }
 .chart-theme-academia h3 { font-weight:400; font-style:italic; }
 .chart-theme-pop { --chart-bg:#67e8f9; --chart-ink:#171717; background-image:radial-gradient(#0002 1px,transparent 1px); background-size:8px 8px; }
 .chart-theme-pop h3 { background:white; border:3px solid; box-shadow:5px 5px 0 black; padding:12px; transform:rotate(-2deg); }
-.chart-theme-blueprint { --chart-bg:#003399; --chart-ink:white; font-family:'Space Mono',monospace; background-image:linear-gradient(#ffffff20 1px,transparent 1px),linear-gradient(90deg,#ffffff20 1px,transparent 1px); background-size:20px 20px; border:10px solid #003399; outline:1px solid white; outline-offset:-15px; }
+.chart-theme-blueprint { --chart-bg:#003399; --chart-ink:white; font-family:ui-monospace,Consolas,monospace; background-image:linear-gradient(#ffffff20 1px,transparent 1px),linear-gradient(90deg,#ffffff20 1px,transparent 1px); background-size:20px 20px; border:10px solid #003399; outline:1px solid white; outline-offset:-15px; }
 .chart-theme-blueprint h3 { border-bottom:1px solid; padding-bottom:12px; }
 .chart-graphic text { fill:currentColor; }

@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { createWorkHtml, parseWorkHtml, validateWork, embedPhotos, THEME_IDS } from '../src/workFile.js';
 
 const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=';
@@ -9,6 +11,19 @@ const fixture = () => ({
     stats: [1,2].map(id => ({id, label:'Books', value:'12', icon:'book'})),
     highlights: [1,2].map(id => ({id, title:'Milestone', desc:'Done!', emoji:'🎉'})),
     photos: [1,2].map(id => ({id, url:photo, caption:'Memory'})) }
+});
+
+test('portable HTML stores repeated photos once, defers image decoding and still imports losslessly', () => {
+  const work = fixture();
+  const slide = renderToStaticMarkup(createElement('div', null, createElement('img', { src: photo }), createElement('img', { src: photo })));
+  const html = createWorkHtml(work, [slide], '');
+  assert.equal(html.split(photo).length - 1, 1);
+  assert.equal((html.match(/data-work-image="0"/g) || []).length, 2);
+  assert.doesNotMatch(html, /<img[^>]*src="data:/);
+  assert.doesNotMatch(html, /rel="preload"/);
+  assert.doesNotMatch(html, /fonts\.google|googletagmanager/);
+  assert.deepEqual(parseWorkHtml(html), work);
+  assert.throws(() => parseWorkHtml(html.replace('"assets":{"0":', '"assets":{"missing":')), /格式/);
 });
 
 test('all themes round-trip through deployable HTML without script injection', () => {

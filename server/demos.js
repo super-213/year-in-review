@@ -72,7 +72,7 @@ export async function readDemo(request, env, id) {
         ...headers,
         'Content-Type': 'text/html; charset=utf-8',
         // Scripts can flip slides but cannot access the editor's cookies or localStorage.
-        'Content-Security-Policy': "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'Content-Security-Policy': "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https: http:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
         'X-Frame-Options': 'DENY',
       },
     });
