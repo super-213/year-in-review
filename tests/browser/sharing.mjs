@@ -15,6 +15,7 @@ const require = createRequire(import.meta.url);
 const root = await mkdtemp(join(tmpdir(), 'review-share-'));
 const server = await createLocalServer({ dataDirectory: root });
 const snapshot = { url: 'https://review.example.com/s/Ab12Cd34', year: '2026', title: '把这一年，留给未来', subtitle: '那些闪闪发光的日常，都值得被记住。', language: 'zh', expiresAt: '2026-11-13T12:00:00Z' };
+const expectedQrUrl = 'https://year-in-review.zhihaojiang.com/s/Ab12Cd34';
 let browser;
 try {
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
@@ -35,7 +36,7 @@ try {
         return window.jsQR(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height)?.data;
       });
     }, { imageUrl: svgDataUrl(poster.svg) });
-    assert.deepEqual(decoded, [snapshot.url, snapshot.url], `${poster.theme}: full and mobile-size PNG must decode`);
+    assert.deepEqual(decoded, [expectedQrUrl, expectedQrUrl], `${poster.theme}: full and mobile-size PNG must decode`);
   }
 
 
@@ -81,7 +82,7 @@ try {
     const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
     return { width: canvas.width, height: canvas.height, url: window.jsQR(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height)?.data };
   }, `data:image/png;base64,${png.toString('base64')}`);
-  assert.deepEqual(decodedPng, { width: 1080, height: 1440, url: target });
+  assert.deepEqual(decodedPng, { width: 1080, height: 1440, url: `https://year-in-review.zhihaojiang.com${result.path}` });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   assert.equal((await fetch(target)).status, 200);
   assert.deepEqual(errors, []);

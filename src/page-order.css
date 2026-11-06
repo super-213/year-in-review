@@ -10,7 +10,7 @@
 .page-order-row .page-order-handle:not(:disabled):hover { color:#4f46e5; }
 .page-order-row .page-order-handle:active { cursor:grabbing; color:#4f46e5; }
 .page-order-row .page-order-select { flex:1; min-width:0; width:auto; justify-content:flex-start; gap:4px; padding:8px; text-align:left; font-size:14px; line-height:1.45; font-weight:600; color:#1e293b; overflow-wrap:anywhere; }
-.page-order-number { font-variant-numeric:tabular-nums; }
+.page-order-number { flex-shrink:0; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .page-order-actions { display:flex; flex:none; }
 .page-order-row .page-order-delete { color:#94a3b8; }
 .page-order-row .page-order-delete:not(:disabled):hover { color:#e11d48; background:#fff1f2; }

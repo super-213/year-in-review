@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { publicWorkUrl } from '../shared/short-links.js';
 
 export const POSTER_WIDTH = 1080;
 export const POSTER_HEIGHT = 1440;
@@ -80,7 +81,8 @@ export function createQrSvg(url, { size = 540, ink = '#111111', shape = 'square'
 
 export function createSharePoster({ url, theme = 'retro', title, subtitle = '', year, expiresAt, language = 'zh' }) {
   const p = POSTER_THEMES[theme] || POSTER_THEMES.retro;
-  const qr = createQrSvg(url, { ink: p.qr, shape: p.shape, size: p.size });
+  const publicUrl = publicWorkUrl(url);
+  const qr = createQrSvg(publicUrl, { ink: p.qr, shape: p.shape, size: p.size });
   const labels = {
     zh: ['我的年度故事', '扫码，打开我的年度故事', '有效期至'],
     en: ['My year in stories', 'SCAN TO OPEN MY YEAR', 'Available until'],
@@ -90,7 +92,7 @@ export function createSharePoster({ url, theme = 'retro', title, subtitle = '', 
   const yearText = Array.from(String(year)).slice(0, 10).join('');
   const yearSize = Math.min(176, 810 / Math.max(4, yearText.length) / .65);
   const date = new Intl.DateTimeFormat(language, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(expiresAt));
-  const displayUrl = new URL(url).host + new URL(url).pathname;
+  const displayUrl = publicUrl.replace(/^https:\/\//, '');
   const mono = 'ui-monospace,Consolas,monospace';
   const family = p.font === 'serif' ? 'Georgia,Songti SC,serif' : p.font === 'monospace' ? mono : p.font === 'cursive' ? 'Comic Sans MS,Kaiti SC,KaiTi,cursive' : 'system-ui,-apple-system,Segoe UI,sans-serif';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440" role="img" aria-label="${escape(title || labels[0])}">
