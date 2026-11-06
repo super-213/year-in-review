@@ -9,6 +9,7 @@ import { WORK_FORMAT, validateWork, parseWorkHtml, embedPhotos, createWorkHtml }
 import { optimizeImage } from './imageOptimizer.js';
 import { EditorPreview, PreviewDialog } from './EditorPreview.jsx';
 import { copyText } from './clipboard.js';
+import PageOrderList from './PageOrderList.jsx';
 import { 
   ChevronLeft, ChevronRight, Coffee, Book, Activity, Zap, Heart, Briefcase, 
   Music, Globe, Terminal, Feather, Smartphone, RefreshCw, Layout, Type, 
@@ -1097,8 +1098,8 @@ export default function YearInReviewGenerator() {
     setDocumentData(previous => ({ ...previous, pages: previous.pages.filter((_, i) => i !== index) }));
     setCurrentSlide(current => index < current ? current - 1 : Math.min(current, pages.length - 2));
   };
-  const reorderPage = (index, direction) => {
-    const reordered = movePage(pages, index, index + direction);
+  const reorderPage = (from, to) => {
+    const reordered = movePage(pages, from, to);
     setDocumentData(previous => ({ ...previous, pages: reordered }));
     setCurrentSlide(reordered.findIndex(page => page.id === activePage.id));
   };
@@ -1653,18 +1654,9 @@ export default function YearInReviewGenerator() {
               <span className="text-xs text-slate-500">{tr('共 {n} 页', { n: totalSlides })}</span>
             </div>
             <p className="text-xs text-slate-500 mb-4">{tr('选择页面编辑，可重复添加同一种界面。每页内容独立，年份、标题和风格共用。')}</p>
-            <ol className="editor-page-list space-y-2 mb-4">
-              {pages.map((page, index) => (
-                <li key={page.id} className={`flex items-center gap-1 rounded-lg border p-1 ${index === currentSlide ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'}`}>
-                  <button onClick={() => { setCurrentSlide(index); setHighlightImageError(null); }} aria-current={index === currentSlide ? 'page' : undefined} className="flex-1 text-left px-3 py-2 text-sm font-medium rounded focus-visible:outline-indigo-600">
-                    {index + 1}. {tr(PAGE_LABELS[page.type])}
-                  </button>
-                  <button onClick={() => reorderPage(index, -1)} disabled={index === 0} aria-label={tr('上移第 {n} 页', { n: index + 1 })} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↑</button>
-                  <button onClick={() => reorderPage(index, 1)} disabled={index === pages.length - 1} aria-label={tr('下移第 {n} 页', { n: index + 1 })} className="p-2 rounded hover:bg-slate-200 disabled:opacity-25">↓</button>
-                  <button onClick={() => removePage(index)} disabled={pages.length === 1} aria-label={tr('删除第 {n} 页', { n: index + 1 })} title={pages.length === 1 ? tr('至少保留一页') : tr('删除页面')} className="p-2 rounded text-slate-400 hover:text-red-600 disabled:opacity-25"><Trash2 className="w-4 h-4" /></button>
-                </li>
-              ))}
-            </ol>
+            <PageOrderList pages={pages} currentId={activePage.id} language={language}
+              onSelect={index => { setCurrentSlide(index); setHighlightImageError(null); }}
+              onMove={reorderPage} onRemove={removePage} />
             <div className="flex flex-wrap gap-2">
               {PAGE_TYPES.map(type => <button key={type} onClick={() => addPage(type)} className="flex items-center gap-1 border border-dashed border-slate-300 rounded-lg px-3 py-2 text-xs font-medium hover:border-indigo-500 hover:text-indigo-600"><Plus className="w-3 h-3" />{tr(PAGE_LABELS[type])}</button>)}
             </div>

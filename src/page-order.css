@@ -1,0 +1,25 @@
+.page-order-hint { margin:-2px 0 12px; color:#64748b; font-size:12px; line-height:1.6; }
+.editor-page-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.editor-page-list .page-order-row,.page-order-overlay { display:flex; align-items:center; gap:2px; min-height:52px; padding:4px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; }
+.editor-page-list .page-order-selected,.page-order-overlay.page-order-selected { border-color:#6366f1; background:#eef2ff; }
+.page-order-row button { display:flex; align-items:center; justify-content:center; flex:none; width:36px; min-height:40px; border-radius:8px; color:#475569; touch-action:manipulation; }
+.page-order-row button:disabled { opacity:.28; cursor:default; }
+.page-order-row button:focus-visible { outline:2px solid #6366f1; outline-offset:1px; }
+.page-order-row button:not(:disabled):hover { background:#e2e8f080; }
+.page-order-row .page-order-handle { flex:none; width:36px; min-height:44px; color:#94a3b8; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.page-order-row .page-order-handle:not(:disabled):hover { color:#4f46e5; }
+.page-order-row .page-order-handle:active { cursor:grabbing; color:#4f46e5; }
+.page-order-row .page-order-select { flex:1; min-width:0; width:auto; justify-content:flex-start; gap:4px; padding:8px; text-align:left; font-size:14px; line-height:1.45; font-weight:600; color:#1e293b; overflow-wrap:anywhere; }
+.page-order-number { font-variant-numeric:tabular-nums; }
+.page-order-actions { display:flex; flex:none; }
+.page-order-row .page-order-delete { color:#94a3b8; }
+.page-order-row .page-order-delete:not(:disabled):hover { color:#e11d48; background:#fff1f2; }
+.editor-page-list .page-order-dragging { opacity:.22; border-style:dashed; }
+.page-order-overlay { cursor:grabbing; box-shadow:0 16px 40px #0f172a26,0 3px 10px #4f46e520; border-color:#818cf8; opacity:.98; user-select:none; pointer-events:none; }
+.page-order-overlay .page-order-handle { display:flex; align-items:center; justify-content:center; color:#4f46e5; }
+.page-order-overlay-label { padding-inline:12px; color:#6366f1; font-size:11px; flex-shrink:0; }
+@media(max-width:1023px) {
+  .page-order-row button,.page-order-row .page-order-handle { width:44px; min-width:44px; min-height:44px; }
+  .page-order-row .page-order-select { min-width:0; }
+}
+@media(prefers-reduced-motion:reduce) { .page-order-row { transition:none!important; animation:none!important; } .page-order-overlay { box-shadow:0 4px 16px #0f172a20; } }

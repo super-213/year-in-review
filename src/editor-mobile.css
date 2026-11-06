@@ -41,7 +41,7 @@
   .editor-panel .editor-photo-upload svg { display:none; }
   .editor-panel .editor-photo-upload span { font-size:12px; }
   .editor-page-list>li { gap:0; }
-  .editor-page-list>li>button:first-child { min-width:0; padding-inline:8px; overflow-wrap:anywhere; }
+  .editor-page-list>li>.page-order-select { min-width:0; padding-inline:8px; overflow-wrap:anywhere; }
   .editor-preview-panel { flex:1; min-height:0; padding:12px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
   .editor-preview-workspace { width:100%; height:100%; min-height:0; }
   .editor-preview-toolbar { flex-shrink:0; max-width:440px!important; margin-bottom:12px!important; }
