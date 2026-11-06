@@ -1,4 +1,13 @@
 export const MESSAGES = {
+  "编辑": { "zh": "编辑", "en": "Edit", "id": "Edit" },
+  "预览": { "zh": "预览", "en": "Preview", "id": "Pratinjau" },
+  "工作区": { "zh": "工作区", "en": "Workspace", "id": "Ruang kerja" },
+  "作品预览": { "zh": "作品预览", "en": "Work preview", "id": "Pratinjau karya" },
+  "全屏预览": { "zh": "全屏预览", "en": "Fullscreen preview", "id": "Pratinjau layar penuh" },
+  "关闭预览": { "zh": "关闭预览", "en": "Close preview", "id": "Tutup pratinjau" },
+  "隐藏界面，截图": { "zh": "隐藏界面，截图", "en": "Hide controls for screenshot", "id": "Sembunyikan kontrol untuk tangkapan layar" },
+  "轻点画面恢复操作，按 Esc 退出截图模式。": { "zh": "轻点画面恢复操作，按 Esc 退出截图模式。", "en": "Tap to restore controls. Press Esc to leave screenshot mode.", "id": "Ketuk untuk memulihkan kontrol. Tekan Esc untuk keluar dari mode tangkapan layar." },
+  "左右滑动翻页": { "zh": "左右滑动翻页", "en": "Swipe to turn pages", "id": "Geser untuk berpindah halaman" },
   "正在处理图片…": {
     "zh": "正在处理图片…",
     "en": "Optimizing image…",

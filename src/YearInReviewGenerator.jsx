@@ -7,6 +7,7 @@ import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageDat
 import exportStyles from './index.css?inline';
 import { WORK_FORMAT, validateWork, parseWorkHtml, embedPhotos, createWorkHtml } from './workFile';
 import { optimizeImage } from './imageOptimizer.js';
+import { EditorPreview, PreviewDialog } from './EditorPreview.jsx';
 import { 
   ChevronLeft, ChevronRight, Coffee, Book, Activity, Zap, Heart, Briefcase, 
   Music, Globe, Terminal, Feather, Smartphone, RefreshCw, Layout, Type, 
@@ -14,7 +15,7 @@ import {
   Image as ImageIcon, Upload, Plus, Trash2, Wand2, Save, RotateCcw, 
   Flame, Languages, Bike, Footprints, Dumbbell, Plane, Gamepad2, Code, 
   PenTool, DollarSign, Headphones, Video, Utensils, Moon, MapPin, 
-  GitBranch, Twitter, Instagram, Linkedin, ShieldCheck, HelpCircle, X, EyeOff, Sparkles // Added Sparkles
+  GitBranch, Twitter, Instagram, Linkedin, ShieldCheck, HelpCircle, X, Sparkles // Added Sparkles
 } from 'lucide-react';
 
 // ... [BAGIAN CONSTANTS (ICON_MAP, DEFAULT_LABELS, THEMES, TEMPLATES, TRANSLATIONS, UTILITY FUNCTIONS, THEME RENDERERS) TETAP SAMA SEPERTI KODE SEBELUMNYA] ...
@@ -1104,6 +1105,9 @@ export default function YearInReviewGenerator() {
   const [showToast, setShowToast] = useState(false);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [mobileView, setMobileView] = useState('edit');
+  const shellRef = useRef(null);
+  const editorPanelRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('');
   const [language, setLanguage] = useState(initialWork.language);
   const [fileStatus, setFileStatus] = useState('');
@@ -1117,6 +1121,39 @@ export default function YearInReviewGenerator() {
   const [deployment, setDeployment] = useState(null);
   const importRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    let focusFrame;
+    const resize = () => {
+      if (viewport && viewport.scale !== 1) return;
+      const shell = shellRef.current;
+      if (!shell) return;
+      shell.style.setProperty('--editor-height', `${viewport?.height ?? window.innerHeight}px`);
+      shell.style.setProperty('--editor-top', `${viewport?.offsetTop ?? 0}px`);
+      cancelAnimationFrame(focusFrame);
+      focusFrame = requestAnimationFrame(() => {
+        const field = document.activeElement;
+        if (window.innerWidth < 1024 && editorPanelRef.current?.contains(field) && field.matches('input,textarea,select')) field.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    };
+    resize();
+    viewport?.addEventListener('resize', resize);
+    viewport?.addEventListener('scroll', resize);
+    window.addEventListener('resize', resize);
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      viewport?.removeEventListener('resize', resize);
+      viewport?.removeEventListener('scroll', resize);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  const switchMobileView = (view, button) => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    setMobileView(view);
+    button.focus({ preventScroll: true });
+  };
 
   // --- [NEW] Onboarding State ---
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -1450,10 +1487,17 @@ export default function YearInReviewGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-800 font-sans flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
+    <div ref={shellRef} data-mobile-view={mobileView} className="editor-shell min-h-screen bg-gray-50 text-slate-800 font-sans flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
+      <div className="editor-mobile-toolbar">
+        <p>{tr('正在编辑：第 {n} 页', { n: currentSlide + 1 })}<br />{tr(PAGE_LABELS[activePage.type])}</p>
+        <div className="editor-mobile-tabs" role="group" aria-label={tr('工作区')}>
+          <button type="button" aria-pressed={mobileView === 'edit'} aria-controls="editor-panel" onClick={event => switchMobileView('edit', event.currentTarget)}><PenTool size={16} />{tr('编辑')}</button>
+          <button type="button" aria-pressed={mobileView === 'preview'} aria-controls="editor-preview-panel" onClick={event => switchMobileView('preview', event.currentTarget)}><Play size={16} />{tr('预览')}</button>
+        </div>
+      </div>
         {/* --- [NEW] ONBOARDING MODAL --- */}
       {showOnboarding && (
-        <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="editor-overlay fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-500 text-center border-4 border-slate-100">
               <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
                  <Sparkles className="w-8 h-8 animate-pulse" />
@@ -1485,9 +1529,9 @@ export default function YearInReviewGenerator() {
       
       {/* Help Modal */}
       {showHelp && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
+        <div className="editor-overlay fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+              <button aria-label={t.close} onClick={() => setShowHelp(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
               <h3 className="text-xl font-black text-slate-900 mb-2">{t.helpTitle}</h3>
@@ -1518,63 +1562,21 @@ export default function YearInReviewGenerator() {
            </div>
         </div>
       )}
-      {/* --- FULL SCREEN PREVIEW OVERLAY --- */}
-      {isFullScreen && (
-        <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center p-0 md:p-4 h-[100dvh]">
-            
-            {/* HIDE UI BUTTON (ADDED) */}
-            <button 
-                onClick={enterCleanMode} 
-                className={`absolute top-4 right-16 z-50 p-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-500 backdrop-blur-md transition-all shadow-lg ${isCleanMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                title="Hide UI for Screenshot"
-            >
-              <Camera className="w-6 h-6" />
-            </button>
-
-            {/* CLOSE BUTTON (Updated with transition) */}
-            <button 
-                onClick={() => setIsFullScreen(false)} 
-                className={`absolute top-4 right-4 z-50 p-3 bg-slate-800/50 text-white rounded-full hover:bg-slate-700/80 backdrop-blur-md transition-all ${isCleanMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            {/* NAV ARROWS (Updated with transition) */}
-            <button 
-                onClick={(e) => { e.stopPropagation(); prevSlide(); }} 
-                className={`absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-slate-800/50 text-white rounded-full hover:bg-slate-700/80 backdrop-blur-md transition-all hidden md:flex ${isCleanMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-            <button 
-                onClick={(e) => { e.stopPropagation(); nextSlide(); }} 
-                className={`absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-slate-800/50 text-white rounded-full hover:bg-slate-700/80 backdrop-blur-md transition-all hidden md:flex ${isCleanMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
-            
-            {/* Mobile tap areas */}
-            <div className={`absolute inset-y-0 left-0 w-1/4 z-40 md:hidden ${isCleanMode ? 'pointer-events-none' : ''}`} onClick={(e) => { e.stopPropagation(); prevSlide(); }} />
-            <div className={`absolute inset-y-0 right-0 w-1/4 z-40 md:hidden ${isCleanMode ? 'pointer-events-none' : ''}`} onClick={(e) => { e.stopPropagation(); nextSlide(); }} />
-
-            <div className="w-full h-full md:aspect-[9/16] relative md:max-w-full shadow-2xl overflow-hidden bg-white">
-               {renderContent()}
-            </div>
-
-            {/* TOAST MESSAGE (ADDED) */}
-            <div 
-                className={`absolute bottom-10 bg-black/90 text-white px-6 py-3 rounded-full border border-white/20 shadow-2xl flex items-center gap-3 transition-all duration-500 z-[60] ${
-                showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-                }`}
-            >
-                <EyeOff size={18} className="text-emerald-400" />
-                <span className="font-medium text-sm">UI Hidden. Click anywhere to restore.</span>
-            </div>
-        </div>
-      )}
+      {isFullScreen && <PreviewDialog title={tr('全屏预览')} clean={isCleanMode} onRestore={exitCleanMode}
+        onClose={() => { setIsFullScreen(false); setIsCleanMode(false); }} closeLabel={tr('关闭预览')}
+        controls={<>
+          <span className="editor-preview-counter" aria-live="polite">{currentSlide + 1} / {totalSlides}</span>
+          <button type="button" aria-label={tr('上一页')} onClick={prevSlide}><ChevronLeft size={20} /></button>
+          <button type="button" aria-label={tr('下一页')} onClick={nextSlide}><ChevronRight size={20} /></button>
+          <button type="button" onClick={enterCleanMode} aria-label={tr('隐藏界面，截图')}><Camera size={20} /></button>
+        </>}>
+        <EditorPreview pages={pages} index={currentSlide} onIndexChange={setCurrentSlide} label={tr('作品预览')}
+          renderPage={index => renderContent(index, pageData(baseData, pages[index]))} />
+        {showToast && <p className="pointer-events-none absolute bottom-8 inset-x-4 text-center text-sm text-white bg-slate-900/90 rounded-full px-4 py-3" role="status">{tr('轻点画面恢复操作，按 Esc 退出截图模式。')}</p>}
+      </PreviewDialog>}
 
       {/* --- LEFT PANEL: EDITOR --- */}
-      <div className="w-full lg:w-1/2 p-6 lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-white shadow-xl z-20 h-auto lg:h-full">
+      <div id="editor-panel" ref={editorPanelRef} className="editor-panel w-full lg:w-1/2 p-6 lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-white shadow-xl z-20 h-auto lg:h-full">
         <div className="max-w-xl mx-auto pb-20">
           <header className="mb-8 border-b pb-4 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
             <div>
@@ -1588,7 +1590,7 @@ export default function YearInReviewGenerator() {
                </div>
             </div>
             <div className="flex flex-wrap gap-2">
-                <button onClick={() => setShowHelp(true)} className="text-[10px] font-bold bg-slate-100 p-2 rounded hover:bg-slate-200 flex items-center justify-center">
+                <button aria-label={t.helpTitle} onClick={() => setShowHelp(true)} className="text-[10px] font-bold bg-slate-100 p-2 rounded hover:bg-slate-200 flex items-center justify-center">
                   <HelpCircle className="w-4 h-4" />
                 </button>
                 <button onClick={toggleLanguage} aria-label={tr('切换语言')} className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded hover:bg-slate-200 flex items-center gap-1">
@@ -1601,7 +1603,7 @@ export default function YearInReviewGenerator() {
           </header>
 
           <section className="mb-8 border-b border-slate-200 pb-6" aria-label={tr('作品文件')}>
-            <div className="flex flex-wrap gap-3">
+            <div className="editor-file-actions flex flex-wrap gap-3">
               <button onClick={exportWork} disabled={isExporting || isDeploying || processingImages > 0} className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
                 <Save className="w-4 h-4" />{isExporting ? tr('正在导出…') : tr('导出可部署 HTML')}
               </button>
@@ -1645,7 +1647,7 @@ export default function YearInReviewGenerator() {
               <span className="text-xs text-slate-500">{tr('共 {n} 页', { n: totalSlides })}</span>
             </div>
             <p className="text-xs text-slate-500 mb-4">{tr('选择页面编辑，可重复添加同一种界面。每页内容独立，年份、标题和风格共用。')}</p>
-            <ol className="space-y-2 mb-4">
+            <ol className="editor-page-list space-y-2 mb-4">
               {pages.map((page, index) => (
                 <li key={page.id} className={`flex items-center gap-1 rounded-lg border p-1 ${index === currentSlide ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'}`}>
                   <button onClick={() => { setCurrentSlide(index); setHighlightImageError(null); }} aria-current={index === currentSlide ? 'page' : undefined} className="flex-1 text-left px-3 py-2 text-sm font-medium rounded focus-visible:outline-indigo-600">
@@ -1689,7 +1691,7 @@ export default function YearInReviewGenerator() {
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><Activity className="w-4 h-4" /> {t.numbers.replace(/^\d+\.\s*/, '')}</h3>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="editor-stat-grid grid grid-cols-2 gap-4 mb-4">
               {data.stats.map((stat) => (
                 <div key={stat.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative group">
                   <button onClick={() => removeStat(stat.id)} disabled={data.stats.length <= 2} className="absolute bottom-2 right-2 p-1 text-slate-300 hover:text-red-500 disabled:opacity-0 transition-colors z-10"><Trash2 className="w-4 h-4" /></button>
@@ -1795,12 +1797,12 @@ export default function YearInReviewGenerator() {
              <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><ImageIcon className="w-4 h-4" /> {t.gallery.replace(/^\d+\.\s*/, '')}</h3>
              </div>
-             <div className="grid grid-cols-3 gap-4 mb-4">
+             <div className="editor-gallery-grid grid grid-cols-3 gap-4 mb-4">
                 {data.photos.map((photo) => (
                    <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
                       <img loading="lazy" decoding="async" src={photo.url} alt="User Upload" className="w-full h-full object-cover" />
                       <button onClick={(e) => { e.stopPropagation(); removePhoto(photo.id); }} disabled={data.photos.length <= 2} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full hover:bg-red-500 disabled:hidden transition-colors z-20"><Trash2 className="w-3 h-3" /></button>
-                      <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity cursor-pointer text-white z-10">
+                      <label className="editor-photo-upload absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity cursor-pointer text-white z-10">
                          <Upload className="w-6 h-6 mb-1" />
                          <span className="text-[10px] uppercase font-bold">{t.change}</span>
                          <input disabled={processingImages > 0 || isExporting || isDeploying} type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(photo.id, e)} />
@@ -1877,15 +1879,15 @@ export default function YearInReviewGenerator() {
       </div>
 
       {/* --- RIGHT PANEL: PREVIEW --- */}
-      <div className="w-full lg:w-1/2 bg-[#0f172a] flex flex-col items-center justify-center p-8 relative overflow-hidden min-h-screen lg:min-h-0">
+      <div id="editor-preview-panel" className="editor-preview-panel w-full lg:w-1/2 bg-[#0f172a] flex flex-col items-center justify-center p-8 relative overflow-hidden min-h-screen lg:min-h-0">
         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900/20 via-slate-900 to-slate-900 z-0"></div>
         <div className="absolute w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl -top-20 -right-20 pointer-events-none"></div>
 
-        <div className="relative z-10 flex flex-col items-center">
+        <div className="editor-preview-workspace relative z-10 flex flex-col items-center">
             {/* Header Controls */}
-            <div className={`flex items-center justify-between w-full max-w-[340px] mb-6 transition-opacity duration-300`}>
+            <div className={`editor-preview-toolbar flex items-center justify-between w-full max-w-[340px] mb-6 transition-opacity duration-300`}>
                 <div className="text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <Play className="w-3 h-3 text-indigo-400 fill-current" /> {t.preview}
+                    <Play className="w-3 h-3 text-indigo-400 fill-current" /> {tr('左右滑动翻页')}
                 </div>
                 <button onClick={() => setIsFullScreen(true)} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-full text-xs font-bold uppercase tracking-wider hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20">
                    <Maximize className="w-3 h-3" /> {t.saveSlide}
@@ -1893,7 +1895,7 @@ export default function YearInReviewGenerator() {
             </div>
 
             {/* PHONE FRAME */}
-            <div className={`relative w-[340px] max-w-full h-[600px] bg-black rounded-[3rem] border-[10px] border-slate-800 shadow-2xl overflow-hidden ring-1 ring-white/10 transition-transform duration-500`}>
+            <div className={`editor-preview-device relative w-[340px] max-w-full h-[600px] bg-black rounded-[3rem] border-[10px] border-slate-800 shadow-2xl overflow-hidden ring-1 ring-white/10 transition-transform duration-500`}>
               <div id="preview-capture-area" className="w-full h-full bg-white relative flex flex-col">
                   <div className="absolute top-0 left-0 right-0 p-3 pt-5 z-50 flex gap-1.5 pointer-events-none">
                   {Array.from({ length: totalSlides }).map((_, idx) => (
@@ -1902,20 +1904,19 @@ export default function YearInReviewGenerator() {
                       </div>
                   ))}
                   </div>
-                  <div className="flex-1 w-full h-full">{renderContent()}</div>
-                  <div className="absolute top-0 left-0 w-1/3 h-full z-40 cursor-w-resize active:bg-black/5 transition-colors" onClick={prevSlide}></div>
-                  <div className="absolute top-0 right-0 w-1/3 h-full z-40 cursor-e-resize active:bg-black/5 transition-colors" onClick={nextSlide}></div>
+                  <EditorPreview pages={pages} index={currentSlide} onIndexChange={setCurrentSlide} fit label={tr('作品预览')}
+                    renderPage={index => renderContent(index, pageData(baseData, pages[index]))} />
               </div>
             </div>
 
             {/* Footer Controls */}
-            <div className={`mt-8 flex gap-6 items-center transition-opacity duration-300`}>
-              <button onClick={prevSlide} className="p-4 bg-slate-800 rounded-full text-white hover:bg-slate-700 transition-colors shadow-lg border border-slate-700 group"><ChevronLeft /></button>
+            <div className={`editor-preview-navigation mt-8 flex gap-6 items-center transition-opacity duration-300`}>
+              <button aria-label={tr('上一页')} onClick={prevSlide} className="p-4 bg-slate-800 rounded-full text-white hover:bg-slate-700 transition-colors shadow-lg border border-slate-700 group"><ChevronLeft /></button>
               <div className="text-slate-500 font-mono text-xs">{currentSlide + 1} / {totalSlides}</div>
-              <button onClick={nextSlide} className="p-4 bg-slate-800 rounded-full text-white hover:bg-slate-700 transition-colors shadow-lg border border-slate-700 group"><ChevronRight /></button>
+              <button aria-label={tr('下一页')} onClick={nextSlide} className="p-4 bg-slate-800 rounded-full text-white hover:bg-slate-700 transition-colors shadow-lg border border-slate-700 group"><ChevronRight /></button>
             </div>
              
-            <p className="mt-6 text-slate-500 text-[10px] uppercase tracking-wider opacity-60 flex items-center gap-1">
+            <p className="editor-preview-hint mt-6 text-slate-500 text-[10px] uppercase tracking-wider opacity-60 flex items-center gap-1">
               <Share2 className="w-3 h-3" /> {t.screenshotHint}
             </p>
         </div>

@@ -1,0 +1,61 @@
+/* The editor uses its own responsive shell; portable work CSS stays independent. */
+.editor-mobile-toolbar { display:none; }
+.editor-preview-carousel { display:flex; width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; scrollbar-width:none; touch-action:auto; }
+.editor-preview-carousel::-webkit-scrollbar { display:none; }
+.editor-preview-slide { position:relative; flex:0 0 100%; min-width:0; height:100%; overflow:hidden; scroll-snap-align:start; scroll-snap-stop:always; }
+.editor-slide-canvas { width:100%; height:100%; }
+.editor-preview-fit .editor-slide-canvas { width:340px; height:var(--preview-canvas-height,600px); transform:scale(var(--preview-scale,1)); transform-origin:top left; }
+.editor-preview-carousel:focus-visible { outline:3px solid #818cf8; outline-offset:-3px; }
+.editor-fullscreen { position:fixed; inset:0; z-index:200; height:var(--editor-height,100dvh); top:var(--editor-top,0px); background:#0f172a; padding-top:max(60px,calc(env(safe-area-inset-top) + 52px)); padding-bottom:env(safe-area-inset-bottom); animation:editor-appear 140ms ease-out; }
+.editor-fullscreen-controls { position:absolute; z-index:10; top:env(safe-area-inset-top); left:max(12px,env(safe-area-inset-left)); right:max(12px,env(safe-area-inset-right)); height:52px; display:flex; align-items:center; justify-content:flex-end; gap:8px; color:white; }
+.editor-fullscreen-controls[hidden] { display:none; }
+.editor-fullscreen-controls button { display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; border-radius:12px; padding:8px 12px; background:#334155; color:white; }
+.editor-fullscreen-controls .editor-close-preview { font-size:28px; line-height:1; }
+.editor-fullscreen-clean { padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.editor-fullscreen-clean .editor-preview-carousel { pointer-events:none; }
+.editor-preview-counter { margin-right:auto; font:500 13px/1 system-ui,sans-serif; }
+.editor-overlay { align-items:flex-start; overflow-y:auto; overscroll-behavior:contain; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:max(16px,env(safe-area-inset-bottom)); }
+.editor-overlay>div { margin-block:auto; flex-shrink:0; }
+.editor-overlay button { min-width:44px; min-height:44px; touch-action:manipulation; }
+@keyframes editor-appear { from { opacity:0; } to { opacity:1; } }
+@media(max-width:1023px) {
+  .editor-shell { position:fixed; top:var(--editor-top,0px); inset-inline:0; height:var(--editor-height,100dvh); min-height:0; overflow:hidden; }
+  .editor-mobile-toolbar { display:flex; flex:none; align-items:center; justify-content:space-between; gap:12px; min-height:64px; padding:calc(env(safe-area-inset-top) + 8px) max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left)); border-bottom:1px solid #e2e8f0; background:#ffffffed; backdrop-filter:blur(16px); z-index:30; }
+  .editor-mobile-toolbar p { min-width:0; font-size:12px; font-weight:600; color:#64748b; }
+  .editor-mobile-tabs { display:flex; gap:2px; padding:3px; background:#f1f5f9; border-radius:14px; flex-shrink:0; }
+  .editor-mobile-tabs button { display:flex; align-items:center; justify-content:center; gap:7px; min-width:82px; min-height:44px; padding:8px 12px; border-radius:11px; font-size:14px; font-weight:700; color:#475569; transition:background 120ms,color 120ms; touch-action:manipulation; }
+  .editor-mobile-tabs button[aria-pressed="true"] { background:#fff; color:#4338ca; box-shadow:0 1px 3px #0f172a15; }
+  .editor-shell[data-mobile-view="edit"] .editor-preview-panel,
+  .editor-shell[data-mobile-view="preview"] .editor-panel { display:none; }
+  .editor-panel { flex:1; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; padding:20px max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); scroll-padding-block:20px; box-shadow:none; }
+  .editor-panel>div { padding-bottom:24px; }
+  .editor-panel input:not([type="file"]),.editor-panel select,.editor-panel textarea { font-size:16px!important; min-width:0; scroll-margin-block:24px; }
+  .editor-panel button { min-height:44px; min-width:44px; touch-action:manipulation; }
+  .editor-panel button:active,.editor-mobile-tabs button:active { opacity:.72; }
+  .editor-panel a { overflow-wrap:anywhere; }
+  .editor-panel .editor-file-actions>button { flex:1 1 130px; justify-content:center; }
+  .editor-panel .editor-stat-grid { grid-template-columns:1fr; }
+  .editor-panel .editor-stat-grid>div { padding-right:52px; }
+  .editor-panel .editor-gallery-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .editor-panel .editor-photo-upload { opacity:1; top:auto; height:44px; background:#0f172ab3; }
+  .editor-panel .editor-photo-upload svg { display:none; }
+  .editor-panel .editor-photo-upload span { font-size:12px; }
+  .editor-page-list>li { gap:0; }
+  .editor-page-list>li>button:first-child { min-width:0; padding-inline:8px; overflow-wrap:anywhere; }
+  .editor-preview-panel { flex:1; min-height:0; padding:12px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
+  .editor-preview-workspace { width:100%; height:100%; min-height:0; }
+  .editor-preview-toolbar { flex-shrink:0; max-width:440px!important; margin-bottom:12px!important; }
+  .editor-preview-toolbar button { min-height:44px; }
+  .editor-preview-device { flex-shrink:1; min-height:0; width:auto!important; height:auto!important; max-height:calc(100% - 116px); aspect-ratio:17/30; max-width:100%; border-width:4px!important; border-radius:20px!important; align-self:center; }
+  .editor-preview-device #preview-capture-area { aspect-ratio:17/30; }
+  .editor-preview-navigation { flex-shrink:0; margin-top:12px!important; gap:20px; }
+  .editor-preview-navigation button { min-height:44px; min-width:44px; padding:10px; }
+  .editor-preview-hint { display:none!important; }
+}
+@media(max-width:359px) {
+  .editor-mobile-toolbar { gap:8px; padding-inline:12px; }
+  .editor-mobile-tabs button { min-width:70px; padding-inline:8px; }
+  .editor-panel h1 { font-size:25px; }
+}
+@media(prefers-reduced-motion:reduce) { .editor-shell *, .editor-fullscreen * { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+@media(prefers-reduced-transparency:reduce) { .editor-mobile-toolbar { background:white; backdrop-filter:none; } }

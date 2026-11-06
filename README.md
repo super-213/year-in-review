@@ -128,6 +128,14 @@ This project is licensed under the MIT License.
 
 运行 `npm test` 验证作品格式、所有主题的数据往返、非法文件拒绝与照片打包失败处理。
 
+### 手机编辑
+
+小于 1024px 的屏幕使用顶部「编辑 / 预览」切换。表单独立滚动，切换视图保留内容与编辑位置；预览按可用屏幕缩放，支持原生左右滑动及按钮翻页。全屏预览也支持滑动，纵向滚动用于阅读页内内容；关闭后仍停留在选中的页面。桌面维持左右分栏。
+
+手机输入框使用至少 16px 字号，按钮触摸区域至少 44px，照片的替换入口始终可见。界面会跟随可视视口调整高度，并为刘海和底部安全区留白。全屏截图模式可轻点恢复操作，键盘用户可用 Esc 返回。
+
+`npm run test:mobile` 是可选的 Playwright 浏览器回归检查，覆盖 320、375、390、430px 手机尺寸、原生触摸翻页、编辑位置保留、模拟键盘视口、横竖屏切换、对话框焦点和桌面分栏。运行前安装 Playwright 和浏览器（`npm install --no-save --package-lock=false playwright`，`npx playwright install chromium`），并执行 `npm run build`。已有 Chrome 时可通过 `CHROME_PATH` 指定浏览器路径；`PLAYWRIGHT_MODULE` 可指向已有 Playwright 模块。
+
 ### Core Memories 图片
 
 每条回忆的 Emoji 下方提供「上传图片」。图片会替代 Emoji 显示在全部主题中，支持替换图片，或「移除图片，恢复 Emoji」。原 Emoji 会保留。
