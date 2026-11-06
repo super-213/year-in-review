@@ -27,3 +27,6 @@ dist-ssr
 .dev.vars
 .dev.vars.*
 .wrangler
+.local-service/
+data/*
+!data/.gitkeep

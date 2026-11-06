@@ -1111,6 +1111,7 @@ export default function YearInReviewGenerator() {
   const [isDeploying, setIsDeploying] = useState(false);
   const [showDeploy, setShowDeploy] = useState(false);
   const [deployPassword, setDeployPassword] = useState('');
+  const [deploymentConfig, setDeploymentConfig] = useState(null);
   const [deployment, setDeployment] = useState(null);
   const importRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -1122,6 +1123,17 @@ export default function YearInReviewGenerator() {
   const tr = (key, params) => translate(language, key, params); 
   const totalSlides = pages.length; 
   const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/deployment', { signal: controller.signal })
+      .then(response => { if (!response.ok) throw new Error('Unavailable'); return response.json(); })
+      .then(config => setDeploymentConfig({ storage: config.storage, requiresPassword: config.requiresPassword !== false }))
+      .catch(() => {
+        if (!controller.signal.aborted) setDeploymentConfig({ storage: 'cloudflare', requiresPassword: true });
+      });
+    return () => controller.abort();
+  }, []);
 
 // --- [NEW] Dynamic Favicon & Meta Title ---
   useEffect(() => {
@@ -1261,13 +1273,13 @@ export default function YearInReviewGenerator() {
       if (blob.size > 20 * 1024 * 1024) throw new Error('临时部署最大支持 20 MB，请缩小照片后重试。');
       const response = await fetch('/api/demos', {
         method: 'POST',
-        headers: { 'Content-Type': 'text/html;charset=utf-8', Authorization: `Bearer ${deployPassword}` },
+        headers: { 'Content-Type': 'text/html;charset=utf-8', ...(deploymentConfig?.requiresPassword ? { Authorization: `Bearer ${deployPassword}` } : {}) },
         body: blob,
         signal: AbortSignal.timeout(120000),
       });
-      const result = await response.json().catch(() => { throw new Error('部署接口不可用，请确认已部署 Cloudflare 后端。'); });
+      const result = await response.json().catch(() => { throw new Error('部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。'); });
       if (!response.ok) throw new Error(result.error || '作品上传失败，请稍后重试。');
-      if (!/^\/demo\/[a-f0-9]{32}$/.test(result.path) || !Number.isFinite(Date.parse(result.expiresAt))) throw new Error('部署接口不可用，请确认已部署 Cloudflare 后端。');
+      if (!/^\/demo\/[a-f0-9]{32}$/.test(result.path) || !Number.isFinite(Date.parse(result.expiresAt))) throw new Error('部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。');
       setDeployment({ url: new URL(result.path, window.location.origin).href, expiresAt: result.expiresAt });
       setDeployPassword('');
       setShowDeploy(false);
@@ -1598,11 +1610,11 @@ export default function YearInReviewGenerator() {
             {showDeploy && (
               <form onSubmit={deployWork} className="mt-4 space-y-3 rounded-lg bg-indigo-50 p-4">
                 <p className="text-sm text-slate-700">{tr('将当前作品及照片上传到网站，任何持有链接的人都可查看。链接 7 天后失效，最大支持 20 MB。')}</p>
-                <label className="block text-sm font-bold text-slate-700">
+                {deploymentConfig?.requiresPassword && <label className="block text-sm font-bold text-slate-700">
                   {tr('部署口令')}
                   <input type="password" value={deployPassword} onChange={event => setDeployPassword(event.target.value)} required disabled={isDeploying} autoComplete="off" className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-normal" />
-                </label>
-                <button type="submit" disabled={isDeploying || !deployPassword.trim()} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{tr(isDeploying ? '正在部署…' : '上传并生成链接')}</button>
+                </label>}
+                <button type="submit" disabled={isDeploying || !deploymentConfig || (deploymentConfig.requiresPassword && !deployPassword.trim())} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{tr(isDeploying ? '正在部署…' : '上传并生成链接')}</button>
               </form>
             )}
             {deployment && (
@@ -1610,7 +1622,7 @@ export default function YearInReviewGenerator() {
                 <p className="font-bold text-indigo-700">{tr('临时作品链接')}</p>
                 <a href={deployment.url} target="_blank" rel="noopener noreferrer" className="block break-all text-indigo-600 underline">{deployment.url}</a>
                 <p className="text-xs text-slate-500">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
-                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
+                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {deploymentConfig?.storage !== 'local' && tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
                 <button type="button" onClick={copyDeployment} className="font-bold text-indigo-700 underline">{tr('复制链接')}</button>
               </div>
             )}

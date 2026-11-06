@@ -14,10 +14,10 @@ export const MESSAGES = {
     "en": "Temporary pages support up to 20 MB. Please reduce photo sizes and try again.",
     "id": "Halaman sementara maksimal 20 MB. Perkecil foto lalu coba lagi."
   },
-  "部署接口不可用，请确认已部署 Cloudflare 后端。": {
-    "zh": "部署接口不可用，请确认已部署 Cloudflare 后端。",
-    "en": "Deployment API unavailable. Check that the Cloudflare backend is deployed.",
-    "id": "API penerbitan tidak tersedia. Pastikan backend Cloudflare sudah diterbitkan."
+  "部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。": {
+    "zh": "部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。",
+    "en": "Deployment API unavailable. Start the local server or deploy the Cloudflare backend.",
+    "id": "API penerbitan tidak tersedia. Jalankan server lokal atau terbitkan backend Cloudflare."
   },
   "作品上传失败，请稍后重试。": {
     "zh": "作品上传失败，请稍后重试。",

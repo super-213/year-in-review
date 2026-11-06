@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node scripts/local-service.mjs start",
+    "stop": "node scripts/local-service.mjs stop",
+    "serve": "node server/local.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

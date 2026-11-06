@@ -34,10 +34,10 @@ async function readHtml(request) {
   return html;
 }
 
-export async function createDemo(request, env) {
+export async function createDemo(request, env, { requirePassword = true } = {}) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (!env.DEMOS_KV || !env.DEPLOY_PASSWORD) return json({ error: '临时部署尚未配置，请先绑定 KV 并设置部署口令。' }, 503);
-  if (!await authorized(request, env.DEPLOY_PASSWORD)) return json({ error: '部署口令不正确。' }, 401);
+  if (!env.DEMOS_KV || (requirePassword && !env.DEPLOY_PASSWORD)) return json({ error: '临时部署尚未配置，请先绑定 KV 并设置部署口令。' }, 503);
+  if (requirePassword && !await authorized(request, env.DEPLOY_PASSWORD)) return json({ error: '部署口令不正确。' }, 401);
   let html;
   try { html = await readHtml(request); }
   catch (error) { return json({ error: error.message }, 400); }
