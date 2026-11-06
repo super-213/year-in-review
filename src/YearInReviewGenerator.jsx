@@ -1057,11 +1057,13 @@ export default function YearInReviewGenerator() {
       if (draft) return validateWork(JSON.parse(draft));
     } catch (error) { console.error('Failed to load draft', error); }
     try {
+      const savedLanguage = localStorage.getItem('yearInReviewLanguage');
+      const language = ['en', 'zh', 'id'].includes(savedLanguage) ? savedLanguage : 'zh';
       return validateWork({ format: WORK_FORMAT, version: 1,
-        data: JSON.parse(localStorage.getItem('yearInReviewData')) || TEMPLATES.id,
+        data: JSON.parse(localStorage.getItem('yearInReviewData')) || TEMPLATES[language],
         theme: localStorage.getItem('yearInReviewTheme') || 'retro',
-        language: ['en', 'zh', 'id'].includes(localStorage.getItem('yearInReviewLanguage')) ? localStorage.getItem('yearInReviewLanguage') : 'id' });
-    } catch { return { data: TEMPLATES.id, theme: 'retro', language: 'id' }; }
+        language });
+    } catch { return { data: TEMPLATES.zh, theme: 'retro', language: 'zh' }; }
   });
   const [documentData, setDocumentData] = useState(() => {
     const data = { ...initialWork.data, chart: translateDefaults(initialWork.data.chart || DEFAULT_CHART, DEFAULT_CHART, TEMPLATES[initialWork.language].chart) };
