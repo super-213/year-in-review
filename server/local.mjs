@@ -27,7 +27,7 @@ export async function createLocalServer({ dataDirectory = resolve(projectRoot, '
     if (url.pathname === '/api/demos') {
       return createDemo(request, { DEMOS_KV: store }, { requirePassword: false });
     }
-    const resource = /^\/demo\/([a-f0-9]{32})\/(?:assets\/([a-f0-9]{64}\.(?:png|jpg|gif|webp|avif|bmp))|(download))$/.exec(url.pathname);
+    const resource = /^\/s\/([A-Za-z0-9]{8})\/(?:assets\/([a-f0-9]{64}\.(?:png|jpg|gif|webp|avif|bmp))|(download))$/.exec(url.pathname);
     if (resource) {
       if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405 });
       const file = await store.readResource(resource[1], resource[3] ? 'source.html' : resource[2]);
@@ -41,7 +41,7 @@ export async function createLocalServer({ dataDirectory = resolve(projectRoot, '
         throw error;
       }
     }
-    if (url.pathname.startsWith('/demo/')) return readDemo(request, { DEMOS_KV: store }, url.pathname.slice(6).replace(/\/$/, ''));
+    if (url.pathname.startsWith('/s/')) return readDemo(request, { DEMOS_KV: store }, url.pathname.slice(3).replace(/\/$/, ''));
     if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
     if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405 });
 

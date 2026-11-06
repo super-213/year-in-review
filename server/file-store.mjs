@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { splitSnapshotImages } from './snapshot-images.mjs';
 
-const idPattern = /^[a-f0-9]{32}$/;
+const idPattern = /^[A-Za-z0-9]{8}$/;
 
 // Keep the existing publishing API while storing each snapshot as ordinary files.
 export class FileDemoStore {
@@ -12,7 +12,7 @@ export class FileDemoStore {
   }
 
   idFromKey(key) {
-    const match = /^demos\/([a-f0-9]{32})\.html$/.exec(key);
+    const match = /^demos\/([A-Za-z0-9]{8})\.html$/.exec(key);
     if (!match) throw new Error('Invalid snapshot key');
     return match[1];
   }
@@ -59,7 +59,7 @@ export class FileDemoStore {
       if (!/^[a-f0-9]{64}\.(png|jpg|gif|webp|avif|bmp)$/.test(name)) continue;
       const bytes = await readFile(join(this.directory, id, 'assets', name));
       const type = name.split('.').pop().replace('jpg', 'jpeg');
-      html = html.split(`/demo/${id}/assets/${name}`).join(`data:image/${type};base64,${bytes.toString('base64')}`);
+      html = html.split(`/s/${id}/assets/${name}`).join(`data:image/${type};base64,${bytes.toString('base64')}`);
     }
     return html;
   }

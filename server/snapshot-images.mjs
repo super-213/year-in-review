@@ -10,7 +10,7 @@ export function splitSnapshotImages(source, id) {
     const extension = match[1].toLowerCase().replace('jpeg', 'jpg');
     const name = `${createHash('sha256').update(bytes).digest('hex')}.${extension}`;
     assets.set(name, bytes);
-    return `/demo/${id}/assets/${name}`;
+    return `/s/${id}/assets/${name}`;
   };
   let html = source.replace(/\bsrc="(data:image\/[^"<>]+)"/gi, (_, image) => `src="${replaceImage(image)}" loading="lazy" decoding="async"`);
   html = html.replace(/(<script type="application\/json" id="year-in-review-work">)([\s\S]*?)(<\/script>)/, (_, start, json, end) => {

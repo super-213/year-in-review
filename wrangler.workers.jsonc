@@ -8,7 +8,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/demo/*"]
+    "run_worker_first": ["/api/*", "/s/*"]
   },
   // Wrangler creates this KV namespace on first deploy and reuses the binding thereafter.
   "kv_namespaces": [{ "binding": "DEMOS_KV" }]

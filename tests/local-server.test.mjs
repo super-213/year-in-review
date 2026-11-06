@@ -81,7 +81,7 @@ test('local server serves frontend, rejects invalid publishing and keeps data ou
   assert.equal((await fetch(`${url}/missing.js`)).status, 404);
   assert.equal((await fetch(`${url}/api/missing`)).status, 404);
   assert.equal((await fetch(`${url}/api/demos`)).status, 405);
-  assert.equal((await fetch(`${url}/demo/bad`)).status, 404);
+  assert.equal((await fetch(`${url}/s/bad`)).status, 404);
   assert.equal((await publish(url, 'invalid')).status, 400);
   const work = await (await publish(url)).json();
   assert.equal((await fetch(`${url}/data/${work.id}/index.html`)).status, 404);

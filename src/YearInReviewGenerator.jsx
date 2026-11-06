@@ -2,12 +2,13 @@ import { DEFAULT_CHART } from './charts.js';
 import { DEFAULT_LABELS, TEMPLATES, TRANSLATIONS } from './locales.js';
 import { translate, translateDefaults } from './i18n.js';
 import { ChartPage, ChartEditor } from './ChartPage.jsx';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
 import { PAGE_TYPES, PAGE_LABELS, PAGE_FIELDS, createPage, defaultPages, pageData, movePage } from './pages.js';
 import exportStyles from './index.css?inline';
 import { WORK_FORMAT, validateWork, parseWorkHtml, embedPhotos, createWorkHtml } from './workFile';
 import { optimizeImage } from './imageOptimizer.js';
 import { EditorPreview, PreviewDialog } from './EditorPreview.jsx';
+import { copyText } from './clipboard.js';
 import { 
   ChevronLeft, ChevronRight, Coffee, Book, Activity, Zap, Heart, Briefcase, 
   Music, Globe, Terminal, Feather, Smartphone, RefreshCw, Layout, Type, 
@@ -31,6 +32,8 @@ import {
 // Kode di bawah ini adalah sambungan dari Renderers sampai Main Component.
 
 // --- [UPDATED] Batas Karakter yang Aman untuk Layout ---
+const ShareCard = lazy(() => import('./ShareCard.jsx'));
+
 const MAX_CHARS = {
   highlightTitle: 20, // Pas 1 baris
   highlightDesc: 70   // Pas 3 baris estetik tanpa terpotong
@@ -1319,8 +1322,8 @@ export default function YearInReviewGenerator() {
       });
       const result = await response.json().catch(() => { throw new Error('部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。'); });
       if (!response.ok) throw new Error(result.error || '作品上传失败，请稍后重试。');
-      if (!/^\/demo\/[a-f0-9]{32}$/.test(result.path) || !Number.isFinite(Date.parse(result.expiresAt))) throw new Error('部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。');
-      setDeployment({ url: new URL(result.path, window.location.origin).href, expiresAt: result.expiresAt });
+      if (!/^\/s\/[A-Za-z0-9]{8}$/.test(result.path) || !Number.isFinite(Date.parse(result.expiresAt))) throw new Error('部署接口不可用，请确认已启动本地服务器或部署 Cloudflare 后端。');
+      setDeployment({ url: new URL(result.path, window.location.origin).href, expiresAt: result.expiresAt, theme: currentTheme, title: baseData.title, subtitle: baseData.subtitle, year: baseData.year, language });
       setDeployPassword('');
       setShowDeploy(false);
       setFileStatus('临时部署成功，链接可公开访问。');
@@ -1333,7 +1336,7 @@ export default function YearInReviewGenerator() {
 
   const copyDeployment = async () => {
     try {
-      await navigator.clipboard.writeText(deployment.url);
+      await copyText(deployment.url);
       setFileStatus('链接已复制。');
     } catch { setFileStatus('无法自动复制，请选中链接手动复制。'); }
   };
@@ -1626,13 +1629,16 @@ export default function YearInReviewGenerator() {
               </form>
             )}
             {deployment && (
-              <div className="mt-4 space-y-2 rounded-lg border border-indigo-200 p-4 text-sm">
-                <p className="font-bold text-indigo-700">{tr('临时作品链接')}</p>
-                <a href={deployment.url} target="_blank" rel="noopener noreferrer" className="block break-all text-indigo-600 underline">{deployment.url}</a>
-                <p className="text-xs text-slate-500">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
-                <p className="text-xs text-slate-500">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {deploymentConfig?.storage !== 'local' && tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
-                <button type="button" onClick={copyDeployment} className="font-bold text-indigo-700 underline">{tr('复制链接')}</button>
-                {deploymentConfig?.storage === 'local' && <a href={`${deployment.url}/download`} className="ml-4 font-bold text-indigo-700 underline">{tr('导出可部署 HTML')}</a>}
+              <div className="share-result">
+                <p className="share-result-title"><Globe size={16} />{tr('临时作品链接')}</p>
+                <div className="share-result-link">
+                  <a href={deployment.url} target="_blank" rel="noopener noreferrer">{deployment.url.replace(/^https?:\/\//, '')}</a>
+                  <button type="button" onClick={copyDeployment}>{tr('复制链接')}</button>
+                </div>
+                <p className="share-result-meta">{tr('失效时间：{time}', { time: new Date(deployment.expiresAt).toLocaleString(language) })}</p>
+                <p className="share-result-meta">{tr('链接展示部署时的快照，继续编辑后需重新部署。')} {deploymentConfig?.storage !== 'local' && tr('新链接在其他地区可能需要约 60 秒同步，请稍后重试。')}</p>
+                {deploymentConfig?.storage === 'local' && <a href={`${deployment.url}/download`} className="share-result-export">{tr('导出可部署 HTML')}</a>}
+                <Suspense fallback={<p className="share-result-meta">{tr('正在生成宣传卡…')}</p>}><ShareCard key={deployment.url} deployment={deployment} /></Suspense>
               </div>
             )}
             <p className="mt-3 text-xs leading-relaxed text-slate-500">{tr('导出的 index.html 包含全部内容、照片和主题。上传到网站即可展示；导入同一文件可继续编辑，并替换当前草稿。')}</p>

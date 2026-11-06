@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDemo, readDemo, MAX_DEMO_BYTES, DEMO_TTL_MS } from '../server/demos.js';
 import worker from '../server/worker.js';
+import { createShortCode, SHORT_CODE_PATTERN } from '../shared/short-links.js';
 
 const html = '<!doctype html><script id="year-in-review-work" type="application/json">{}</script><h1>测试</h1>';
 function fixture() {
@@ -19,14 +20,14 @@ function fixture() {
 const upload = (password = 'test-secret', body = html, extra = {}) => new Request('https://example.com/api/demos', {
   method: 'POST', headers: { Authorization: `Bearer ${password}`, 'Content-Type': 'text/html', ...extra }, body,
 });
-const view = id => new Request(`https://example.com/demo/${id}`);
+const view = id => new Request(`https://example.com/s/${id}`);
 
 test('publish and read preserve HTML, create distinct same-domain links and isolate scripts', async () => {
   const env = fixture();
   const response = await createDemo(upload(), env);
   assert.equal(response.status, 201);
   const result = await response.json();
-  assert.match(result.path, /^\/demo\/[a-f0-9]{32}$/);
+  assert.match(result.path, /^\/s\/[A-Za-z0-9]{8}$/);
   assert.equal(env.objects.get(`demos/${result.id}.html`).expiration * 1000, Date.parse(result.expiresAt));
   assert.ok(Math.abs(Date.parse(result.expiresAt) - Date.now() - DEMO_TTL_MS) < 2000);
   const other = await (await createDemo(upload(), env)).json();
@@ -64,7 +65,7 @@ test('expired or malformed expiry cannot be served; missing pages do not return 
     assert.equal((await readDemo(view(id), env, id)).status, 410);
   }
   assert.equal((await readDemo(view('bad'), env, '../anything')).status, 404);
-  assert.equal((await readDemo(view('a'.repeat(32)), env, 'a'.repeat(32))).status, 404);
+  assert.equal((await readDemo(view('a'.repeat(8)), env, 'a'.repeat(8))).status, 404);
 });
 
 test('storage errors have explicit failure responses and worker delegates editor assets', async () => {
@@ -90,7 +91,23 @@ test('KV automatic expiration and regional misses show a retry hint without cach
 test('KV read failures do not expose internals or fall back to editor', async () => {
   const env = fixture();
   env.DEMOS_KV.getWithMetadata = async () => { throw new Error('quota exceeded: internal details'); };
-  const response = await readDemo(view('a'.repeat(32)), env, 'a'.repeat(32));
+  const response = await readDemo(view('a'.repeat(8)), env, 'a'.repeat(8));
   assert.equal(response.status, 502);
   assert.ok(!(await response.text()).includes('internal details'));
+});
+
+test('short codes have eight URL-safe characters and collisions never overwrite a known snapshot', async () => {
+  const ids = new Set(Array.from({ length: 2000 }, () => createShortCode()));
+  assert.equal(ids.size, 2000);
+  for (const id of ids) assert.match(id, SHORT_CODE_PATTERN);
+  const env = fixture();
+  const first = await createDemo(upload(), env, { generateId: () => 'Ab12Cd34' });
+  assert.equal(first.status, 201);
+  let attempts = 0;
+  const second = await createDemo(upload(), env, { generateId: () => attempts++ === 0 ? 'Ab12Cd34' : 'Ef56Gh78' });
+  assert.equal((await second.json()).path, '/s/Ef56Gh78');
+  assert.equal(env.objects.size, 2);
+  assert.equal((await createDemo(upload(), env, { generateId: () => 'Ab12Cd34' })).status, 503);
+  assert.equal(env.objects.size, 2);
+  assert.equal((await readDemo(view('a'.repeat(32)), env, 'a'.repeat(32))).status, 404);
 });

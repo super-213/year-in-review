@@ -1,6 +1,6 @@
+import { createShortCode, SHORT_CODE_PATTERN } from '../shared/short-links.js';
 export const MAX_DEMO_BYTES = 20 * 1024 * 1024;
 export const DEMO_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const ID_PATTERN = /^[a-f0-9]{32}$/;
 const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' };
 const json = (value, status = 200) => Response.json(value, { status, headers });
 
@@ -34,28 +34,37 @@ async function readHtml(request) {
   return html;
 }
 
-export async function createDemo(request, env, { requirePassword = true } = {}) {
+export async function createDemo(request, env, { requirePassword = true, generateId = createShortCode } = {}) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   if (!env.DEMOS_KV || (requirePassword && !env.DEPLOY_PASSWORD)) return json({ error: '临时部署尚未配置，请先绑定 KV 并设置部署口令。' }, 503);
   if (requirePassword && !await authorized(request, env.DEPLOY_PASSWORD)) return json({ error: '部署口令不正确。' }, 401);
   let html;
   try { html = await readHtml(request); }
   catch (error) { return json({ error: error.message }, 400); }
-  const id = crypto.randomUUID().replaceAll('-', '');
   const expiration = Math.floor((Date.now() + DEMO_TTL_MS) / 1000);
   const expiresAt = new Date(expiration * 1000).toISOString();
   try {
-    await env.DEMOS_KV.put(`demos/${id}.html`, html, {
-      expiration,
-      metadata: { expiresAt },
-    });
-    return json({ id, path: `/demo/${id}`, expiresAt }, 201);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const id = generateId();
+      if (!SHORT_CODE_PATTERN.test(id)) throw new Error('Invalid short code');
+      const key = `demos/${id}.html`;
+      const existing = await env.DEMOS_KV.getWithMetadata(key, { type: 'stream', cacheTtl: 30 });
+      if (existing.value !== null) { await existing.value.cancel(); continue; }
+      try {
+        await env.DEMOS_KV.put(key, html, { expiration, metadata: { expiresAt } });
+        return json({ id, path: `/s/${id}`, expiresAt }, 201);
+      } catch (error) {
+        if (['EEXIST', 'ENOTEMPTY'].includes(error.code)) continue;
+        throw error;
+      }
+    }
+    return json({ error: '作品上传失败，请稍后重试。' }, 503);
   } catch { return json({ error: '作品上传失败，请稍后重试。' }, 502); }
 }
 
 export async function readDemo(request, env, id) {
   if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405, headers });
-  if (!ID_PATTERN.test(id)) return new Response('作品不存在。', { status: 404, headers });
+  if (!SHORT_CODE_PATTERN.test(id)) return new Response('作品不存在。', { status: 404, headers });
   if (!env.DEMOS_KV) return new Response('临时部署尚未配置。', { status: 503, headers });
   try {
     const key = `demos/${id}.html`;
